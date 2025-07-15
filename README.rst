@@ -1,12 +1,12 @@
 PySLM Python Library for Selective Laser Melting and Additive Manufacturing
 =============================================================================
 
-.. https://github.com/drlukeparry/pyslm/raw/dev/docs/images/pyslm.png
+.. https://github.com/xiechao06/pyslm/raw/dev/docs/images/pyslm.png
 
-.. image:: https://github.com/drlukeparry/pyslm/raw/dev/docs/images/pyslm.png
+.. image:: https://github.com/xiechao06/pyslm/raw/dev/docs/images/pyslm.png
     :alt:  PySLM - Library for Additive Manufacturing and 3D Printing including Selective Laser Melting
-.. image:: https://github.com/drlukeparry/pyslm/actions/workflows/pythonpublish.yml/badge.svg
-    :target: https://github.com/drlukeparry/pyslm/actions
+.. image:: https://github.com/xiechao06/pyslm/actions/workflows/pythonpublish.yml/badge.svg
+    :target: https://github.com/xiechao06/pyslm/actions
 .. image:: https://readthedocs.org/projects/pyslm/badge/?version=latest
     :target: https://pyslm.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status
@@ -74,7 +74,7 @@ library, an algorithm for extracting precise definition of volumetric support re
 based on self-intersections with the mesh. From these volumes, porous grid-truss structure suitable for SLM based
 process can be generated.
 
-.. image:: https://github.com/drlukeparry/pyslm/raw/dev/docs/images/pyslmSupportStructures.png
+.. image:: https://github.com/xiechao06/pyslm/raw/dev/docs/images/pyslmSupportStructures.png
     :alt: The tools available in PySLM for locating overhang regions and support regions for 3D Printing and
           generating volumetric block supports alongside grid-truss based support structures suitable for SLM.
     :width: 80%
@@ -93,7 +93,7 @@ The laser scan vectors can be visualised using ``Matplotlib``. The order of the 
 development of the scan strategies, but additional information such length, laser parameter information associated
 with each scan vector can be shown.
 
-.. image:: https://github.com/drlukeparry/pyslm/raw/dev/docs/images/pyslmVisualisationTools.png
+.. image:: https://github.com/xiechao06/pyslm/raw/dev/docs/images/pyslmVisualisationTools.png
     :alt: The tools available in PySLM for visualising analyisng collections of scan vectors used in SLM.
     :width: 80%
     :align: center
@@ -123,13 +123,13 @@ build file formats have been developed.
 * EOS SLI formats (**.sli**)
 * SLM Solutions (**.slm**).
 
-If you would like to support implementing a custom format, please raise a `request <https://github.com/drlukeparry/pyslm/issues>`_.
-For further information, see the latest `release notes <https://github.com/drlukeparry/pyslm/blob/dev/CHANGELOG.md>`_.
+If you would like to support implementing a custom format, please raise a `request <https://github.com/xiechao06/pyslm/issues>`_.
+For further information, see the latest `release notes <https://github.com/xiechao06/pyslm/blob/dev/CHANGELOG.md>`_.
 
 Installation
 *************
-Installation is currently supported on Windows, Mac OS X and Linux environments. The pre-requisites for using PySLM
-can be installed via PyPi and/or Anaconda distribution.
+Installation is currently supported on Windows, Mac OS X and Linux environments.
+The pre-requisites for using PySLM can be installed via PyPi and/or Anaconda distribution.
 
 .. code:: bash
 
@@ -159,7 +159,7 @@ exclusively in Python, therefore a seperate compiler infrastructure (cython) is 
 
 .. code:: bash
 
-    git clone https://github.com/drlukeparry/pyslm.git && cd ./pyslm
+    git clone https://github.com/xiechao06/pyslm.git && cd ./pyslm
     python setup.py install
 
 Usage
@@ -203,10 +203,10 @@ maximum scan vector length generated in a region.
 
 The result of the script output is shown here
 
-.. image:: https://github.com/drlukeparry/pyslm/raw/dev/docs/images/stripe_scan_strategy_example.png
+.. image:: https://github.com/xiechao06/pyslm/raw/dev/docs/images/stripe_scan_strategy_example.png
    :width: 50%
    :align: center
    :alt:  PySLM - Illustration of a Stripe Scan Strategy employed in 3D printing
 
 For further guidance please look at documented examples are provided in
-`examples <https://github.com/drlukeparry/pyslm/tree/master/examples>`_ .
+`examples <https://github.com/xiechao06/pyslm/tree/master/examples>`_ .
