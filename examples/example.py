@@ -60,6 +60,11 @@ Arrows can be enables by setting the parameter plotArrows to True
 
 pyslm.visualise.plot(layer, plot3D=False, plotOrderLine=True, plotArrows=False)
 
+import matplotlib.pyplot as plt
+
+plt.show()
+
+
 """
 Before exporting or analysing the scan vectors, a model and build style need to be created and assigned to the 
 LaserGeometry groups.
@@ -88,3 +93,4 @@ predicted.
 print('Total Path Distance: {:.1f} mm'.format(pyslm.analysis.getLayerPathLength(layer)))
 print('Total jump distance {:.1f} mm'.format(pyslm.analysis.getLayerJumpLength(layer)))
 print('Time taken {:.1f} s'.format(pyslm.analysis.getLayerTime(layer, [model])) )
+
