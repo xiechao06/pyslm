@@ -1,7 +1,7 @@
 {
     "github.copilot.chat.commitMessageGeneration.instructions": [
         {
-            "text": "Use conventional commit message format."
+            "file": ".github/instructions/copilot-commit-message.instructions.md",
         }
     ],
 }
