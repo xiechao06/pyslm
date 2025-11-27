@@ -1,6 +1,7 @@
 """
 Provides classes and methods for the creation of grid block supports for use typically in metal Additive Manufacturing
 """
+
 from enum import IntEnum
 from typing import Any, Optional, List, Tuple, Union
 import logging
@@ -26,6 +27,7 @@ from .geometry import *
 from ..hatching import BaseHatcher
 from ..hatching import utils as hatchingUtils
 
+
 class GridMeshType(IntEnum):
     """
     The mesh definition for each part of a grid truss support structure
@@ -45,6 +47,7 @@ class GridMeshType(IntEnum):
     """
     A slice along the y-direction
     """
+
 
 class GridBlockSupport(BlockSupportBase):
     """
@@ -90,15 +93,16 @@ class GridBlockSupport(BlockSupportBase):
     Pair tolerance used for matching upper and lower paths of the support boundary. This is an internal tolerance
     used but may be re-defined by the user."""
 
-
-    def __init__(self, supportObject: Part = None,
-                       supportVolume: trimesh.Trimesh = None,
-                       supportSurface: trimesh.Trimesh = None,
-                       intersectsPart: bool = False):
-
+    def __init__(
+        self,
+        supportObject: Part = None,
+        supportVolume: trimesh.Trimesh = None,
+        supportSurface: trimesh.Trimesh = None,
+        intersectsPart: bool = False,
+    ):
         super().__init__(supportObject, supportVolume, supportSurface, intersectsPart)
 
-        self._gridSpacing = [3, 3] # mm
+        self._gridSpacing = [3, 3]  # mm
         self._useSupportBorder = True
         self._useSupportSkin = True
         self._supportWallThickness = 0.5
@@ -110,16 +114,16 @@ class GridBlockSupport(BlockSupportBase):
         self._numSkinMeshSubdivideIterations = int(2)
 
         self._supportTeethHeight = 1.5  # mm
-        self._supportTeethTopLength = 0.1 # mm
-        self._supportTeethBottomLength = 1.5 # mm
-        self._supportTeethBaseInterval = 0.2 # mm
-        self._supportTeethUpperPenetration = 0.2 # mm
+        self._supportTeethTopLength = 0.1  # mm
+        self._supportTeethBottomLength = 1.5  # mm
+        self._supportTeethBaseInterval = 0.2  # mm
+        self._supportTeethUpperPenetration = 0.2  # mm
 
         self._useUpperSupportTeeth = True
         self._useLowerSupportTeeth = False
 
     def __str__(self):
-        return 'GridBlockSupport'
+        return "GridBlockSupport"
 
     @property
     def numSkinMeshSubdivideIterations(self) -> int:
@@ -167,6 +171,7 @@ class GridBlockSupport(BlockSupportBase):
     @useLowerSupportTeeth.setter
     def useLowerSupportTeeth(self, state: bool):
         self._useLowerSupportTeeth = state
+
     @property
     def supportTeethHeight(self) -> float:
         """
@@ -235,7 +240,7 @@ class GridBlockSupport(BlockSupportBase):
 
     @property
     def useSupportSkin(self) -> bool:
-        """ Generates a support skin around the extruded boundary of the support"""
+        """Generates a support skin around the extruded boundary of the support"""
         return self._useSupportSkin
 
     @useSupportSkin.setter
@@ -244,7 +249,7 @@ class GridBlockSupport(BlockSupportBase):
 
     @property
     def useSupportBorder(self) -> bool:
-        """ Generates a border around the each truss grid """
+        """Generates a border around the each truss grid"""
         return self._useSupportBorder
 
     @useSupportBorder.setter
@@ -311,8 +316,8 @@ class GridBlockSupport(BlockSupportBase):
 
     @staticmethod
     def holeGeometry():
-        """ Depreciated function """
-        return Polygon([[-1.5, 0], [0, 1.], [1.5, 0], [0, -1.0], [-1.5, 0]])
+        """Depreciated function"""
+        return Polygon([[-1.5, 0], [0, 1.0], [1.5, 0], [0, -1.0], [-1.5, 0]])
 
     @staticmethod
     def clipLines(paths: Any, lines: np.ndarray) -> List[np.ndarray]:
@@ -330,15 +335,22 @@ class GridBlockSupport(BlockSupportBase):
 
         pc.addPaths(lines.reshape(-1, 2, 3), pyclipr.Subject, True)
         pc.addPaths(paths, pyclipr.Clip, False)
-        out = pc.execute(pyclipr.Intersection, pyclipr.FillRule.NonZero, returnOpenPaths=True, returnZ=False)
+        out = pc.execute(
+            pyclipr.Intersection,
+            pyclipr.FillRule.NonZero,
+            returnOpenPaths=True,
+            returnZ=False,
+        )
         lineXY = np.array(out[1])
 
         return lineXY
 
     @staticmethod
-    def generateMeshGrid(poly: shapely.geometry.polygon.Polygon,
-                         hatchSpacing: Optional[float] = 5.0,
-                         hatchAngle: Optional[float] = 45.0) -> np.ndarray:
+    def generateMeshGrid(
+        poly: shapely.geometry.polygon.Polygon,
+        hatchSpacing: Optional[float] = 5.0,
+        hatchAngle: Optional[float] = 45.0,
+    ) -> np.ndarray:
         """
         Generates a grid mesh i.e. a series of hatches to fill a polygon region in order to generate a truss network
         used as part of a support truss structure. The mesh grid is offset to create the truss.
@@ -364,23 +376,26 @@ class GridBlockSupport(BlockSupportBase):
 
         # Calculates the diagonal length for which is the longest
         diagonal = bbox[2:] - bboxCentre
-        bboxRadius = np.ceil(np.sqrt(diagonal.dot(diagonal)) / hatchSpacing) * hatchSpacing
+        bboxRadius = (
+            np.ceil(np.sqrt(diagonal.dot(diagonal)) / hatchSpacing) * hatchSpacing
+        )
 
         # Construct a square which wraps the radius
-        x = np.tile(np.arange(-bboxRadius, bboxRadius, hatchSpacing, dtype=np.float32).reshape(-1, 1), (2)).flatten()
+        x = np.tile(
+            np.arange(-bboxRadius, bboxRadius, hatchSpacing, dtype=np.float32).reshape(
+                -1, 1
+            ),
+            (2),
+        ).flatten()
         y = np.array([-bboxRadius, bboxRadius])
         y = np.resize(y, x.shape)
         z = np.arange(0, x.shape[0] / 2, 0.5).astype(np.int64)
 
-        coords = np.hstack([x.reshape(-1, 1),
-                            y.reshape(-1, 1),
-                            z.reshape(-1, 1)])
+        coords = np.hstack([x.reshape(-1, 1), y.reshape(-1, 1), z.reshape(-1, 1)])
 
         # Create the 2D rotation matrix with an additional row, column to preserve the hatch order
         c, s = np.cos(theta_h), np.sin(theta_h)
-        R = np.array([(c, -s, 0),
-                      (s, c, 0),
-                      (0, 0, 1.0)])
+        R = np.array([(c, -s, 0), (s, c, 0), (0, 0, 1.0)])
 
         # Apply the rotation matrix and translate to bounding box centre
         coords = np.matmul(R, coords.T)
@@ -414,10 +429,10 @@ class GridBlockSupport(BlockSupportBase):
         :return: The support geometry mesh
         """
 
-        logging.info('Generating Mesh Geometry for GridBlock Support')
-        logging.info('\tGenerating support grid slices')
+        logging.info("Generating Mesh Geometry for GridBlock Support")
+        logging.info("\tGenerating support grid slices")
         slicesX, slicesY = self.generateSupportSlices()
-        logging.info('\tGenerating support border')
+        logging.info("\tGenerating support border")
 
         if self.useSupportSkin:
             supportSkins = self.generateSupportSkins()
@@ -426,10 +441,13 @@ class GridBlockSupport(BlockSupportBase):
 
         # Use the Cork library to merge meshes
         if self._mergeMesh:
+            raise Exception(
+                "Currently performing a boolean merge between shell meshes is not available - please use the non-merged mesh"
+            )
 
-            raise Exception('Currently performing a boolean merge between shell meshes is not available - please use the non-merged mesh')
-
-            logging.info('\t - Resolving Boolean Intersections between all support meshes')
+            logging.info(
+                "\t - Resolving Boolean Intersections between all support meshes"
+            )
             # Intersect the projection of the support face with the original part using the Cork Library
 
             isectMesh = slicesX + slicesY
@@ -439,13 +457,17 @@ class GridBlockSupport(BlockSupportBase):
 
             isectMesh += supportSkins
         else:
-            logging.info('\t Concatenating Support Geometry Meshes Together')
-            maxId = np.max(slicesY.face_attributes.get('order', 0)) + 1
+            logging.info("\t Concatenating Support Geometry Meshes Together")
+            maxId = np.max(slicesY.face_attributes.get("order", 0)) + 1
 
             # Update the scan order index for each boundary located on the support
             for i in range(len(supportSkins)):
-                supportSkins[i].face_attributes['order'] = np.ones(len(supportSkins[i].faces)) * (maxId + i)
-                supportSkins[i].face_attributes['type'] = np.ones(len(supportSkins[i].faces)) * GridMeshType.BOUNDARY
+                supportSkins[i].face_attributes["order"] = np.ones(
+                    len(supportSkins[i].faces)
+                ) * (maxId + i)
+                supportSkins[i].face_attributes["type"] = (
+                    np.ones(len(supportSkins[i].faces)) * GridMeshType.BOUNDARY
+                )
 
             # Concatenate the meshes including the stored face attributes
             isectMesh = self.concatenateMeshes([slicesX, slicesY] + supportSkins)
@@ -454,7 +476,9 @@ class GridBlockSupport(BlockSupportBase):
         isectMesh.visual.face_colors[:, :3] = np.random.randint(254, size=3)
         return isectMesh
 
-    def generateSliceBoundingBoxPolygon(self, section: trimesh.path.Path2D) -> shapely.geometry.Polygon:
+    def generateSliceBoundingBoxPolygon(
+        self, section: trimesh.path.Path2D
+    ) -> shapely.geometry.Polygon:
         """
         Generates an equivalent 2D Polygon bounding box of the support geometry volume transformed correctly into the
         local coordinate system of each grid slice by inversion of the internally stored transformation matrix in
@@ -467,7 +491,7 @@ class GridBlockSupport(BlockSupportBase):
 
         supportGeom = self._supportVolume
         sliceTransform = section[1]
-        #bbox = np.dot(np.linalg.inv(section.metadata['to_3D'][:3, :3]), supportGeom.bounds.T).T
+        # bbox = np.dot(np.linalg.inv(section.metadata['to_3D'][:3, :3]), supportGeom.bounds.T).T
         bbox = np.dot(np.linalg.inv(sliceTransform[:3, :3]), supportGeom.bounds.T).T
 
         bx = bbox[:, 0]
@@ -478,11 +502,9 @@ class GridBlockSupport(BlockSupportBase):
         b = [np.min(by), np.max(by)]
 
         # Create a closed polygon representing the transformed slice geometry
-        bboxPoly = Polygon([[a[0], b[0]],
-                            [a[0], b[1]],
-                            [a[1], b[1]],
-                            [a[1], b[0]],
-                            [a[0], b[0]]])
+        bboxPoly = Polygon(
+            [[a[0], b[0]], [a[0], b[1]], [a[1], b[1]], [a[1], b[0]], [a[0], b[0]]]
+        )
 
         return bboxPoly
 
@@ -499,11 +521,13 @@ class GridBlockSupport(BlockSupportBase):
         p_d = self._supportTeethBaseInterval
 
         # Generate a pattern
-        toothPattern = [(0.0, 0.0),
-                        ((p_c - p_b) / 2.0, p_a),
-                        ((p_c - p_b) / 2.0 + p_b, p_a),
-                        (p_c, 0.0),
-                        (p_c + p_d, 0.0)]
+        toothPattern = [
+            (0.0, 0.0),
+            ((p_c - p_b) / 2.0, p_a),
+            ((p_c - p_b) / 2.0 + p_b, p_a),
+            (p_c, 0.0),
+            (p_c + p_d, 0.0),
+        ]
 
         toothPattern = np.array(toothPattern)
 
@@ -527,16 +551,19 @@ class GridBlockSupport(BlockSupportBase):
 
         sin_theta = getFaceZProjectionWeight(self._supportVolume, useConnectivity=False)
 
-        topIdx = np.argwhere(sin_theta < BlockSupportGenerator._supportSkinSideTolerance)
+        topIdx = np.argwhere(
+            sin_theta < BlockSupportGenerator._supportSkinSideTolerance
+        )
 
         newIdx = section[2]
-        fndIdx = np.isin(newIdx,topIdx, invert=False)
+        fndIdx = np.isin(newIdx, topIdx, invert=False)
         sideIdx = np.invert(fndIdx)
 
         segs = section[0]  # [fndIdx]
         unique, inverse = trimesh.grouping.unique_rows(segs.reshape(-1, 2), digits=4)
-        out = trimesh.path.exchange.misc.edges_to_path(edges=inverse.reshape((-1, 2)),
-                                                       vertices=segs.reshape(-1, 2)[unique])
+        out = trimesh.path.exchange.misc.edges_to_path(
+            edges=inverse.reshape((-1, 2)), vertices=segs.reshape(-1, 2)[unique]
+        )
         ad = trimesh.load_path(out)
         paths = ad.discrete
         slicePaths = []
@@ -548,8 +575,7 @@ class GridBlockSupport(BlockSupportBase):
         offsetPaths = []
 
         for path in paths:
-
-            coords = np.hstack([path,np.roll(path,-1,axis=0)]).reshape(-1, 2, 2)[:-1]
+            coords = np.hstack([path, np.roll(path, -1, axis=0)]).reshape(-1, 2, 2)[:-1]
 
             """
             Identify the upper and lower edges of the polygon. This is guaranteed for extruded supports because the
@@ -557,9 +583,13 @@ class GridBlockSupport(BlockSupportBase):
             the polygons edges have been pre-sorted and correctly orientated.
             """
 
-            idx = np.abs(np.diff(coords, axis=1).reshape(-1, 2)[:,1]) > 1e-4
-            splitIdx = np.split(np.arange(0, len(idx)), np.argwhere(np.diff(idx)).ravel()+1)
-            partsIdx = np.argwhere(np.array([np.any(idx[split]) for split in splitIdx])) # Locate only masked edges
+            idx = np.abs(np.diff(coords, axis=1).reshape(-1, 2)[:, 1]) > 1e-4
+            splitIdx = np.split(
+                np.arange(0, len(idx)), np.argwhere(np.diff(idx)).ravel() + 1
+            )
+            partsIdx = np.argwhere(
+                np.array([np.any(idx[split]) for split in splitIdx])
+            )  # Locate only masked edges
 
             newPaths = []
 
@@ -568,11 +598,11 @@ class GridBlockSupport(BlockSupportBase):
 
             """ Iterate through the identified upper and lower edges found """
             for segIdx in partsIdx:
-
                 sid = int(segIdx)
 
-                seg = np.vstack([coords[splitIdx[sid]][:, 0, :],
-                                 coords[splitIdx[sid]][-1, 1, :]])
+                seg = np.vstack(
+                    [coords[splitIdx[sid]][:, 0, :], coords[splitIdx[sid]][-1, 1, :]]
+                )
                 ps = trimesh.path.traversal.PathSample(seg)
 
                 """
@@ -601,7 +631,9 @@ class GridBlockSupport(BlockSupportBase):
                 Clip the interpolate positions. Trimesh PathSampler clips and repeats values, therefore only unique
                 values are selected and used for generating the teeth profile
                 """
-                xPos, idx = np.unique(np.clip(patternList[:, 0], 0, ps.length), return_index=True)
+                xPos, idx = np.unique(
+                    np.clip(patternList[:, 0], 0, ps.length), return_index=True
+                )
                 teethFinal = ps.sample(xPos)
 
                 teethFinal[:, 0] += dir * patternList[idx, 1]
@@ -630,7 +662,7 @@ class GridBlockSupport(BlockSupportBase):
                 newPaths.append(teethFinal)
 
             nPaths = np.vstack(newPaths)
-            nPaths = np.vstack([nPaths, nPaths[0,:]])
+            nPaths = np.vstack([nPaths, nPaths[0, :]])
             nPathPoly = shapely.geometry.Polygon(nPaths).buffer(1e-5)
             slicePaths.append(nPathPoly)
 
@@ -638,37 +670,57 @@ class GridBlockSupport(BlockSupportBase):
             Add additional support to the upper and lower surfaces 
             """
             if self._supportWallThickness > 1e-5:
-
                 if len(upperPaths) == 0 or len(lowerPaths) == 0:
                     continue
 
-                topPolyVerts2, bottomPolyVerts2 = upperPaths[0].copy(), lowerPaths[0].copy()
+                topPolyVerts2, bottomPolyVerts2 = (
+                    upperPaths[0].copy(),
+                    lowerPaths[0].copy(),
+                )
 
-                topPolyVerts2 = np.vstack([topPolyVerts2[0, :],
-                                           topPolyVerts2,
-                                           topPolyVerts2[-1, :],
-                                           topPolyVerts2[0, :]])
-                topPolyVerts2[[0, -1, -2], [0, 0, 0]] = np.min(topPolyVerts2[:, 0]) - 10.0
+                topPolyVerts2 = np.vstack(
+                    [
+                        topPolyVerts2[0, :],
+                        topPolyVerts2,
+                        topPolyVerts2[-1, :],
+                        topPolyVerts2[0, :],
+                    ]
+                )
+                topPolyVerts2[[0, -1, -2], [0, 0, 0]] = (
+                    np.min(topPolyVerts2[:, 0]) - 10.0
+                )
 
-                bottomPolyVerts2 = np.vstack([bottomPolyVerts2[0, :],
-                                              bottomPolyVerts2,
-                                              bottomPolyVerts2[-1, :],
-                                              bottomPolyVerts2[0, :]])
-                bottomPolyVerts2[[0, -1, -2], [0, 0, 0]] = np.max(bottomPolyVerts2[:, 0]) + 10.0
+                bottomPolyVerts2 = np.vstack(
+                    [
+                        bottomPolyVerts2[0, :],
+                        bottomPolyVerts2,
+                        bottomPolyVerts2[-1, :],
+                        bottomPolyVerts2[0, :],
+                    ]
+                )
+                bottomPolyVerts2[[0, -1, -2], [0, 0, 0]] = (
+                    np.max(bottomPolyVerts2[:, 0]) + 10.0
+                )
 
                 isectPolyA = shapely.geometry.Polygon(bottomPolyVerts2)  # bottom edge
                 isectPolyB = shapely.geometry.Polygon(topPolyVerts2)  # top edge
 
                 # Merge the polygon sections together and offset the boundary
                 try:
-                    offsetWalls = isectPolyB.buffer(1e-8).union(isectPolyA.buffer(1e-8)).buffer(self._supportWallThickness)
+                    offsetWalls = (
+                        isectPolyB.buffer(1e-8)
+                        .union(isectPolyA.buffer(1e-8))
+                        .buffer(self._supportWallThickness)
+                    )
                     isectPolyC = offsetWalls.intersection(nPathPoly)
 
                     # Identify only geometry which is a polygon/multipolygon
                     if isinstance(isectPolyC, shapely.geometry.GeometryCollection):
                         fndPolys = []
                         for poly in isectPolyC.geoms:
-                            if isinstance(poly, shapely.geometry.Polygon) or isinstance(poly, shapely.geometry.MultiPolygon):
+                            if isinstance(poly, shapely.geometry.Polygon) or isinstance(
+                                poly, shapely.geometry.MultiPolygon
+                            ):
                                 fndPolys.append(poly)
 
                         offsetPaths += fndPolys
@@ -718,12 +770,12 @@ class GridBlockSupport(BlockSupportBase):
             """
 
             # Perform the offseting operation
-            outerPaths = pc.execute(10. / BaseHatcher.CLIPPER_SCALEFACTOR)
+            outerPaths = pc.execute(10.0 / BaseHatcher.CLIPPER_SCALEFACTOR)
 
             return outerPaths
 
         else:
-            outerPaths = pc.execute(10. / BaseHatcher.CLIPPER_SCALEFACTOR)
+            outerPaths = pc.execute(10.0 / BaseHatcher.CLIPPER_SCALEFACTOR)
 
             # Offset the outer boundary to generate the interior boundary
             pc.clear()
@@ -736,8 +788,12 @@ class GridBlockSupport(BlockSupportBase):
         diag = self._gridSpacing[0] * np.sin(np.deg2rad(self._trussAngle))
 
         # Generate the mesh grid used for the support trusses and merge the lines together
-        hatchesA = self.generateMeshGrid(bboxPoly, hatchAngle=self._trussAngle, hatchSpacing=diag).reshape(-1, 2, 3)
-        hatchesB = self.generateMeshGrid(bboxPoly, hatchAngle=180 - self._trussAngle, hatchSpacing=diag).reshape(-1, 2, 3)
+        hatchesA = self.generateMeshGrid(
+            bboxPoly, hatchAngle=self._trussAngle, hatchSpacing=diag
+        ).reshape(-1, 2, 3)
+        hatchesB = self.generateMeshGrid(
+            bboxPoly, hatchAngle=180 - self._trussAngle, hatchSpacing=diag
+        ).reshape(-1, 2, 3)
         hatches = np.vstack([hatchesA, hatchesB])
 
         """
@@ -760,10 +816,11 @@ class GridBlockSupport(BlockSupportBase):
         pc2.addPaths(trussPaths, pyclipr.Subject, False)
         pc2.addPaths(outerPaths, pyclipr.Clip, False)
 
-        solution = pc2.execute(pyclipr.Intersection, pyclipr.FillRule.NonZero, returnOpenPaths=False)
+        solution = pc2.execute(
+            pyclipr.Intersection, pyclipr.FillRule.NonZero, returnOpenPaths=False
+        )
 
         if self._supportWallThickness > 1e-5:
-
             pc2.clear()
             pc2.addPaths(solution, pyclipr.Clip)
 
@@ -782,8 +839,10 @@ class GridBlockSupport(BlockSupportBase):
             """
             pc2.clear()
             pc2.addPaths(outerPaths, pyclipr.Subject, False)
-            pc2.addPaths(offsetPathInner,  pyclipr.Clip, False)
-            skinSolutionPaths = pc2.execute(pyclipr.Difference, returnOpenPaths=False, returnZ=False)
+            pc2.addPaths(offsetPathInner, pyclipr.Clip, False)
+            skinSolutionPaths = pc2.execute(
+                pyclipr.Difference, returnOpenPaths=False, returnZ=False
+            )
 
             """
             Merge all the paths together
@@ -818,7 +877,6 @@ class GridBlockSupport(BlockSupportBase):
         supportShapes = []
 
         for poly in polys:
-
             sliceBBox = poly.bounds
 
             if True:
@@ -839,10 +897,14 @@ class GridBlockSupport(BlockSupportBase):
 
                 section_holes = poly.difference(union_holes)
             else:
-                section_holes = poly.difference(poly.buffer(-self._supportBorderDistance))
+                section_holes = poly.difference(
+                    poly.buffer(-self._supportBorderDistance)
+                )
 
             if self._useSupportBorder:
-                support_border = poly.difference(poly.buffer(-self._supportBorderDistance))
+                support_border = poly.difference(
+                    poly.buffer(-self._supportBorderDistance)
+                )
                 supportShape = support_border.union(section_holes)
             else:
                 supportShape = section_holes
@@ -852,13 +914,16 @@ class GridBlockSupport(BlockSupportBase):
         # Merge the Support Geometry
         # sliceGeometry = shapely.ops.unary_union(supportShapes)
 
-        loadedPaths = [trimesh.path.exchange.load.load_path(path) for path in list(supportShapes)]
+        loadedPaths = [
+            trimesh.path.exchange.load.load_path(path) for path in list(supportShapes)
+        ]
         sectionPath = trimesh.path.util.concatenate(loadedPaths)
 
         return sectionPath
 
-    def generateSupportSkinInfill(self, myPolyVerts: np.ndarray,
-                                  returnPolyNodes: Optional[bool] =False) -> Tuple[np.ndarray, np.ndarray]:
+    def generateSupportSkinInfill(
+        self, myPolyVerts: np.ndarray, returnPolyNodes: Optional[bool] = False
+    ) -> Tuple[np.ndarray, np.ndarray]:
         """
         Generates a standard truss grid infill for a support border boundary  has been previously
         flattened prior to applying a 'wrapping' transformation projecting the 2D skin into the 3D support
@@ -869,9 +934,9 @@ class GridBlockSupport(BlockSupportBase):
         pc = pyclipr.ClipperOffset()
         pc.scaleFactor = BaseHatcher.CLIPPER_SCALEFACTOR
         # Offset the outer path to provide a clean boundary to work with
-        #paths2 = np.hstack([myPolyVerts, np.arange(len(myPolyVerts)).reshape(-1, 1)])
-        #paths2 = list(map(tuple, paths2))
-        #clipPaths = BaseHatcher.scaleToClipper(paths2)
+        # paths2 = np.hstack([myPolyVerts, np.arange(len(myPolyVerts)).reshape(-1, 1)])
+        # paths2 = list(map(tuple, paths2))
+        # clipPaths = BaseHatcher.scaleToClipper(paths2)
 
         """
         Offset the paths interior
@@ -883,17 +948,21 @@ class GridBlockSupport(BlockSupportBase):
             Only generate the polygon section. This requires processing within pyclipr to process each path
             into the correct order.
             """
-            outerPaths = pc.execute2(10. / BaseHatcher.CLIPPER_SCALEFACTOR)
+            outerPaths = pc.execute2(10.0 / BaseHatcher.CLIPPER_SCALEFACTOR)
 
             # Process the paths and create valid path rings to form a polygon for triangulation
-            exterior, interior = sortExteriorInteriorRings(outerPaths, closePolygon=True)
+            exterior, interior = sortExteriorInteriorRings(
+                outerPaths, closePolygon=True
+            )
 
             # Triangulate the surface for re-mapping the mesh to the boundary
-            vy, fy = triangulatePolygonFromPaths(exterior[0], interior, triangle_args='pa{:.3f}'.format(2.0))
+            vy, fy = triangulatePolygonFromPaths(
+                exterior[0], interior, triangle_args="pa{:.3f}".format(2.0)
+            )
 
             return vy, fy
         else:
-            outerPaths = pc.execute(10. / BaseHatcher.CLIPPER_SCALEFACTOR)
+            outerPaths = pc.execute(10.0 / BaseHatcher.CLIPPER_SCALEFACTOR)
 
         # Offset the outer boundary to make the outside
         pc.clear()
@@ -907,16 +976,19 @@ class GridBlockSupport(BlockSupportBase):
         b = [np.min(myPolyVerts[:, 1]), np.max(myPolyVerts[:, 1])]
 
         # Create a closed polygon representing the transformed slice geometry
-        bboxPoly = Polygon([[a[0], b[0]],
-                            [a[0], b[1]],
-                            [a[1], b[1]],
-                            [a[1], b[0]], [a[0], b[0]]])
+        bboxPoly = Polygon(
+            [[a[0], b[0]], [a[0], b[1]], [a[1], b[1]], [a[1], b[0]], [a[0], b[0]]]
+        )
 
         """
         Generate the mesh grid used for the support trusses and merge the lines together
         """
-        hatchesA = self.generateMeshGrid(bboxPoly, hatchSpacing=diag, hatchAngle=self._trussAngle).reshape(-1, 2, 3)
-        hatchesB = self.generateMeshGrid(bboxPoly, hatchSpacing=diag, hatchAngle=180 - self._trussAngle).reshape(-1, 2, 3)
+        hatchesA = self.generateMeshGrid(
+            bboxPoly, hatchSpacing=diag, hatchAngle=self._trussAngle
+        ).reshape(-1, 2, 3)
+        hatchesB = self.generateMeshGrid(
+            bboxPoly, hatchSpacing=diag, hatchAngle=180 - self._trussAngle
+        ).reshape(-1, 2, 3)
         hatches = np.vstack([hatchesA, hatchesB])
 
         """
@@ -933,7 +1005,6 @@ class GridBlockSupport(BlockSupportBase):
         pc2 = pyclipr.Clipper()
 
         if self._useSupportBorder and len(offsetPathInner) > 0:
-
             pc2.addPaths(trussPaths, pyclipr.Subject)
             pc2.addPaths(outerPaths, pyclipr.Clip)
 
@@ -979,11 +1050,11 @@ class GridBlockSupport(BlockSupportBase):
         # poly = Polygon(tuple(map(tuple, exterior[0])), holes=[tuple(map(tuple, ring))for ring in interior])
 
         # vy, fy =  pyslm.support.geometry.triangulateShapelyPolygon(poly, triangle_args='pa{:.3f}'.format(4.0))
-        #vy, fy = pyslm.support.geometry.triangulatePolygonFromPaths(exterior[0], interior,
+        # vy, fy = pyslm.support.geometry.triangulatePolygonFromPaths(exterior[0], interior,
         #                                                            triangle_args='pa{:.3f}'.format(4.0))
         # vy, fy = bufferPoly.triangulate(triangle_args='pa{:.3f}'.format(4.0))
         # wvy, fy = triangulatePolygon(solution, closed=False)
-        #return vy, fy
+        # return vy, fy
 
         return solution
 
@@ -1023,10 +1094,9 @@ class GridBlockSupport(BlockSupportBase):
             return []
 
         if len(supportSurf) > 2:
-
             # Uncomment below to identify issues with support generation
-            #blockSupportSides.show()
-            warnings.warn('Warning: number of isolated curves')
+            # blockSupportSides.show()
+            warnings.warn("Warning: number of isolated curves")
             return []
 
         (top, bottom) = (supportSurf[0], supportSurf[1])
@@ -1051,7 +1121,9 @@ class GridBlockSupport(BlockSupportBase):
 
         # Calculate the distance of the loops using the 2D (XY) Projection
         topPathLengths = [ent.length(topPoly2D.vertices) for ent in topPoly2D.entities]
-        bottomPathLengths = [ent.length(bottomPoly2D.vertices) for ent in bottomPoly2D.entities]
+        bottomPathLengths = [
+            ent.length(bottomPoly2D.vertices) for ent in bottomPoly2D.entities
+        ]
 
         pairTolerance = 0.1
 
@@ -1066,9 +1138,8 @@ class GridBlockSupport(BlockSupportBase):
 
         # remove isolated edges in poly
         if len(pairs) < 1:
-
             # Uncomment to visualise the support if there any issues with the support generation
-            #blockSupportSides.show()
+            # blockSupportSides.show()
             return []
 
         topPaths = topPoly3D.paths
@@ -1077,14 +1148,17 @@ class GridBlockSupport(BlockSupportBase):
         if len(topPoly3D.paths) != len(bottomPoly3D.paths):
             blockSupportSides.show()
             # print('numer of paths between top and bottom do not match', len(topPoly3D.paths) , len(bottomPoly3D.paths))
-            logging.warning('Number of paths between top and bottom of support structure do not match - skipping')
+            logging.warning(
+                "Number of paths between top and bottom of support structure do not match - skipping"
+            )
             return []
 
         boundaryMeshList = []
 
         for pair in pairs:
-
-            topVerts = trimesh.path.traversal.discretize_path(topPoly3D.entities, topPoly3D.vertices, topPoly3D.paths[pair[0]])
+            topVerts = trimesh.path.traversal.discretize_path(
+                topPoly3D.entities, topPoly3D.vertices, topPoly3D.paths[pair[0]]
+            )
             topPoly3Dcpy = topPoly3D.copy()
             topPoly3Dcpy.vertices[:, 2] = 0.0
 
@@ -1114,8 +1188,11 @@ class GridBlockSupport(BlockSupportBase):
             bottomPoly3Dcpy = bottomPoly3D.copy()
             bottomPoly3Dcpy.vertices[:, 2] = 0.0
 
-            bottomVerts = trimesh.path.traversal.discretize_path(bottomPoly3D.entities, bottomPoly3D.vertices,
-                                                                 bottomPoly3D.paths[pair[1]])
+            bottomVerts = trimesh.path.traversal.discretize_path(
+                bottomPoly3D.entities,
+                bottomPoly3D.vertices,
+                bottomPoly3D.paths[pair[1]],
+            )
 
             bottomXY = bottomVerts[:, :2]
             bottomZ = bottomVerts[:, 2]
@@ -1150,7 +1227,9 @@ class GridBlockSupport(BlockSupportBase):
 
             bottomPolyX = np.cumsum(dist)
             bottomPolyY = bottomZ
-            bottomPolyVerts = np.hstack([bottomPolyX.reshape(-1, 1), bottomPolyY.reshape(-1, 1)])
+            bottomPolyVerts = np.hstack(
+                [bottomPolyX.reshape(-1, 1), bottomPolyY.reshape(-1, 1)]
+            )
             bottomPolyVerts = np.flip(bottomPolyVerts, axis=0)
 
             """
@@ -1180,10 +1259,12 @@ class GridBlockSupport(BlockSupportBase):
                 Clip the interpolate positions. Trimesh PathSampler clips and repeats values, therefore only unique
                 values are selected and used for generating the teeth profile
                 """
-                xPos, idx = np.unique(np.clip(patternList[:, 0], 0, ps.length), return_index=True)
+                xPos, idx = np.unique(
+                    np.clip(patternList[:, 0], 0, ps.length), return_index=True
+                )
                 teethFinalBottom = ps.sample(xPos)
 
-                #teethFinal = ps.sample(np.clip(patternList[:, 0], 0, ps.length))
+                # teethFinal = ps.sample(np.clip(patternList[:, 0], 0, ps.length))
                 teethFinalBottom[:, 1] += patternList[idx, 1]
 
             """
@@ -1193,7 +1274,6 @@ class GridBlockSupport(BlockSupportBase):
             """
 
             if self._useUpperSupportTeeth:
-
                 # Provide a path interpolator to resample the teeth across the profile
                 ps = trimesh.path.traversal.PathSample(topPolyVerts)
 
@@ -1216,10 +1296,12 @@ class GridBlockSupport(BlockSupportBase):
                 Clip the interpolate positions. Trimesh PathSampler clips and repeats values, therefore only unique
                 values are selected and used for generating the teeth profile
                 """
-                xPos, idx = np.unique(np.clip(patternList[:, 0], 0, ps.length), return_index=True)
+                xPos, idx = np.unique(
+                    np.clip(patternList[:, 0], 0, ps.length), return_index=True
+                )
                 teethFinalTop = ps.sample(xPos)
 
-                #teethFinal = ps.sample(np.clip(patternList[:, 0], 0, ps.length))
+                # teethFinal = ps.sample(np.clip(patternList[:, 0], 0, ps.length))
                 teethFinalTop[:, 1] += patternList[idx, 1]
 
             vertexList = []
@@ -1246,41 +1328,64 @@ class GridBlockSupport(BlockSupportBase):
             Add additional support to the upper and lower surfaces 
             """
             if self._supportWallThickness > 1e-5:
+                infillSolution = self.generateSupportSkinInfill(
+                    myPolyVerts, returnPolyNodes=False
+                )
 
-                infillSolution = self.generateSupportSkinInfill(myPolyVerts, returnPolyNodes=False)
+                topPolyVerts2, bottomPolyVerts2 = (
+                    topPolyVerts.copy(),
+                    bottomPolyVerts.copy(),
+                )
 
-                topPolyVerts2, bottomPolyVerts2 = topPolyVerts.copy(), bottomPolyVerts.copy()
+                topPolyVerts2 = np.vstack(
+                    [
+                        topPolyVerts2[0, :],
+                        topPolyVerts2,
+                        topPolyVerts2[-1, :],
+                        topPolyVerts2[0, :],
+                    ]
+                )
 
-                topPolyVerts2 = np.vstack([topPolyVerts2[0, :],
-                                           topPolyVerts2,
-                                           topPolyVerts2[-1, :],
-                                           topPolyVerts2[0, :]])
+                topPolyVerts2[[0, -1, -2], [1, 1, 1]] = (
+                    np.max(topPolyVerts2[:, 1]) + 10.0
+                )
 
-                topPolyVerts2[[0, -1, -2], [1, 1, 1]] = np.max(topPolyVerts2[:, 1]) + 10.0
+                bottomPolyVerts2 = np.vstack(
+                    [
+                        bottomPolyVerts2[0, :],
+                        bottomPolyVerts2,
+                        bottomPolyVerts2[-1, :],
+                        bottomPolyVerts2[0, :],
+                    ]
+                )
 
-                bottomPolyVerts2 = np.vstack([bottomPolyVerts2[0, :],
-                                              bottomPolyVerts2,
-                                              bottomPolyVerts2[-1, :],
-                                              bottomPolyVerts2[0, :]])
+                bottomPolyVerts2[[0, -1, -2], [1, 1, 1]] = (
+                    np.min(bottomPolyVerts2[:, 1]) - 10.0
+                )
 
-                bottomPolyVerts2[[0, -1, -2], [1, 1, 1]] = np.min(bottomPolyVerts2[:, 1]) - 10.0
-
-                isectPolyA = shapely.geometry.Polygon(bottomPolyVerts2) # bottom edge
-                isectPolyB = shapely.geometry.Polygon(topPolyVerts2) # top edge
+                isectPolyA = shapely.geometry.Polygon(bottomPolyVerts2)  # bottom edge
+                isectPolyB = shapely.geometry.Polygon(topPolyVerts2)  # top edge
 
                 # Merge the polygon sections together and offset the boundary
                 try:
-                    offsetWalls = isectPolyB.union(isectPolyA).buffer(self._supportWallThickness)
-                    isectPolyC = offsetWalls.intersection(shapely.geometry.Polygon(myPolyVerts))
+                    offsetWalls = isectPolyB.union(isectPolyA).buffer(
+                        self._supportWallThickness
+                    )
+                    isectPolyC = offsetWalls.intersection(
+                        shapely.geometry.Polygon(myPolyVerts)
+                    )
                 except:
-                    raise Exception('Error: please share a bug report')
+                    raise Exception("Error: please share a bug report")
 
                 paths = [np.array(path) for path in infillSolution]
-                newPaths = [np.hstack([path, np.arange(len(path)).reshape(-1, 1)]) for path in paths]
+                newPaths = [
+                    np.hstack([path, np.arange(len(path)).reshape(-1, 1)])
+                    for path in paths
+                ]
 
                 newPaths2 = []
                 for path in newPaths:
-                    newPaths2.append(np.vstack([path, path[0,:]]))
+                    newPaths2.append(np.vstack([path, path[0, :]]))
 
                 ac = [np.array(pol) for pol in hatchingUtils.poly2Paths(isectPolyC)]
 
@@ -1292,7 +1397,9 @@ class GridBlockSupport(BlockSupportBase):
                 result = pc.execute2(pyclipr.Union, pyclipr.FillRule.NonZero)
 
             else:
-                result = self.generateSupportSkinInfill(myPolyVerts, returnPolyNodes=True)
+                result = self.generateSupportSkinInfill(
+                    myPolyVerts, returnPolyNodes=True
+                )
 
             """
             Create the polygon and triangulate with triangle library to provide a precise controlled conformal mesh.
@@ -1301,15 +1408,22 @@ class GridBlockSupport(BlockSupportBase):
 
             if len(exterior) < 0:
                 import pyslm.visualise
-                result2 = self.generateSupportSkinInfill(myPolyVerts, returnPolyNodes=False)
+
+                result2 = self.generateSupportSkinInfill(
+                    myPolyVerts, returnPolyNodes=False
+                )
                 handle = pyslm.visualise.plotPolygon([myPolyVerts])
                 pyslm.visualise.plotPolygon(result2, handle)
-                raise Exception('Error: exterior count < 1: Please report bug report')
+                raise Exception("Error: exterior count < 1: Please report bug report")
 
             if len(exterior) > 1:
-                raise Exception('Error: exterior count > 1. Increase the support border distance to resolve this issue. ')
+                raise Exception(
+                    "Error: exterior count > 1. Increase the support border distance to resolve this issue. "
+                )
 
-            vy, fy = triangulatePolygonFromPaths(exterior[0], interior, triangle_args='pa{:.3f}'.format(4.0))
+            vy, fy = triangulatePolygonFromPaths(
+                exterior[0], interior, triangle_args="pa{:.3f}".format(4.0)
+            )
 
             """
             Create the interpolation or mapping function to go from the 2D polygon to the 3D mesh for the support boundary.
@@ -1319,10 +1433,14 @@ class GridBlockSupport(BlockSupportBase):
             y2 = topXY[:, 1]
 
             x = np.linspace(0.0, np.max(myPolyVerts[:, 0]), len(y1))
-            f1 = interpolate.interp1d(topPolyX, y1, bounds_error=False, fill_value=(topXY[0, 0], topXY[-1, 0]))
+            f1 = interpolate.interp1d(
+                topPolyX, y1, bounds_error=False, fill_value=(topXY[0, 0], topXY[-1, 0])
+            )
 
             x2 = np.linspace(0.0, np.max(myPolyVerts[:, 0]), len(y2))
-            f2 = interpolate.interp1d(topPolyX, y2, bounds_error=False, fill_value=(topXY[0, 1], topXY[-1, 1]))
+            f2 = interpolate.interp1d(
+                topPolyX, y2, bounds_error=False, fill_value=(topXY[0, 1], topXY[-1, 1])
+            )
 
             vy = np.hstack([vy, np.zeros([len(vy), 1])])
 
@@ -1331,7 +1449,9 @@ class GridBlockSupport(BlockSupportBase):
             This ensures that the mesh correctly conforms to the boundary of the support block volume - especially at sharp
             apexes or corners.triangulatePo
             """
-            tmpMesh = trimesh.Trimesh(vertices=vy, faces=fy, process=True, validate=True)
+            tmpMesh = trimesh.Trimesh(
+                vertices=vy, faces=fy, process=True, validate=True
+            )
             tmpMesh.merge_vertices()
 
             vy, fy = tmpMesh.vertices, tmpMesh.faces
@@ -1350,7 +1470,13 @@ class GridBlockSupport(BlockSupportBase):
             boundaryY = f2(vy[:, 0])
             boundaryZ = vy[:, 1]
 
-            verts = np.hstack([boundaryX.reshape(-1, 1), boundaryY.reshape(-1, 1), boundaryZ.reshape(-1, 1)])
+            verts = np.hstack(
+                [
+                    boundaryX.reshape(-1, 1),
+                    boundaryY.reshape(-1, 1),
+                    boundaryZ.reshape(-1, 1),
+                ]
+            )
             # Append a z coordinate in order to transform to mesh
             boundaryMesh = trimesh.Trimesh(vertices=verts, faces=fy, process=True)
             boundaryMeshList.append(boundaryMesh)
@@ -1373,11 +1499,11 @@ class GridBlockSupport(BlockSupportBase):
         """
         scanId = 0
 
-
         # Process the Section X
         for i, sectionX in enumerate(sectionsX):
-
-            logging.info('\tX Support generated - {:d}/{:d}'.format(i + 1, len(sectionsX)))
+            logging.info(
+                "\tX Support generated - {:d}/{:d}".format(i + 1, len(sectionsX))
+            )
             section = self.generateSliceGeometry(sectionX)
 
             if section is None:
@@ -1395,8 +1521,12 @@ class GridBlockSupport(BlockSupportBase):
                 idx = 0
 
                 for sect in section.children:
-                    exterior, interior = sortExteriorInteriorRings(sect, closePolygon=True)
-                    vertsx, facesx = triangulatePolygonFromPaths(exterior[0], interior, triangle_args='pa{:.3f}'.format(4.0))
+                    exterior, interior = sortExteriorInteriorRings(
+                        sect, closePolygon=True
+                    )
+                    vertsx, facesx = triangulatePolygonFromPaths(
+                        exterior[0], interior, triangle_args="pa{:.3f}".format(4.0)
+                    )
 
                     vx.append(vertsx)
                     fx.append(facesx + idx)
@@ -1417,18 +1547,18 @@ class GridBlockSupport(BlockSupportBase):
             secX = trimesh.Trimesh(vertices=vx, faces=fx)
 
             # Add the scan order to the mesh so that the hatches can be seperated later during slicing
-            secX.face_attributes['order'] = np.ones(len(fx)) * scanId
-            secX.face_attributes['type'] = np.ones(len(fx)) * GridMeshType.SLICE_X
+            secX.face_attributes["order"] = np.ones(len(fx)) * scanId
+            secX.face_attributes["type"] = np.ones(len(fx)) * GridMeshType.SLICE_X
             scanId += 1
 
             # Transform using the original transformation matrix generated during slicing
-            #secX.apply_transform(sectionX.metadata['to_3D'])
+            # secX.apply_transform(sectionX.metadata['to_3D'])
             secX.apply_transform(sectionX[1])
             xSectionMeshList.append(secX)
 
-        logging.info('Compounding X Grid meshes')
+        logging.info("Compounding X Grid meshes")
         # Concatenate all the truss meshes for the x-slices together in a single pass
-        #xSectionMesh = trimesh.util.concatenate(xSectionMeshList)
+        # xSectionMesh = trimesh.util.concatenate(xSectionMeshList)
         xSectionMesh = self.concatenateMeshes(xSectionMeshList)
 
         # The maximum Id is used for collecting the current scan order
@@ -1436,8 +1566,11 @@ class GridBlockSupport(BlockSupportBase):
 
         # Process the Section Y
         for i, sectionY in enumerate(sectionsY):
-
-            logging.info('Y Support grid slice generated - {:d}/{:d}'.format(i + 1, len(sectionsY)))
+            logging.info(
+                "Y Support grid slice generated - {:d}/{:d}".format(
+                    i + 1, len(sectionsY)
+                )
+            )
 
             section = self.generateSliceGeometry(sectionY)
 
@@ -1452,9 +1585,12 @@ class GridBlockSupport(BlockSupportBase):
 
                 idx = 0
                 for sect in section.children:
-
-                    exterior, interior = sortExteriorInteriorRings(sect, closePolygon=True)
-                    vertsy, facesy = triangulatePolygonFromPaths(exterior[0], interior, triangle_args='pa{:.3f}'.format(4.0))
+                    exterior, interior = sortExteriorInteriorRings(
+                        sect, closePolygon=True
+                    )
+                    vertsy, facesy = triangulatePolygonFromPaths(
+                        exterior[0], interior, triangle_args="pa{:.3f}".format(4.0)
+                    )
                     vy.append(vertsy)
                     fy.append(facesy + idx)
                     idx += len(vertsy)
@@ -1479,24 +1615,23 @@ class GridBlockSupport(BlockSupportBase):
             secY = trimesh.Trimesh(vertices=vy, faces=fy)
 
             # Add the scan order to the mesh so that the hatches can be seperated later during slicing
-            secY.face_attributes['order'] = np.ones(len(fy)) * scanId
-            secY.face_attributes['type']  = np.ones(len(fy)) * GridMeshType.SLICE_Y
+            secY.face_attributes["order"] = np.ones(len(fy)) * scanId
+            secY.face_attributes["type"] = np.ones(len(fy)) * GridMeshType.SLICE_Y
 
             scanId += 1
 
             # Transform using the original transformation matrix generated during slicing
-            #secY.apply_transform(sectionY.metadata['to_3D'])
+            # secY.apply_transform(sectionY.metadata['to_3D'])
             secY.apply_transform(sectionY[1])
             ySectionMeshList.append(secY)
 
-        logging.info('\tCompounding Y Grid meshes')
+        logging.info("\tCompounding Y Grid meshes")
 
         # Concatenate all the truss meshes for the y-slices together in a single pass
         ySectionMesh = self.concatenateMeshes(ySectionMeshList)
         return xSectionMesh, ySectionMesh
 
     def concatenateMeshes(self, meshList):
-
         if len(meshList) < 1:
             return trimesh.Trimesh()
 
@@ -1504,7 +1639,9 @@ class GridBlockSupport(BlockSupportBase):
         idxCumSum = np.hstack([0, np.cumsum(idxLen)])
 
         newVerts = np.vstack([mesh.vertices for mesh in meshList])
-        newFaces = np.vstack([mesh.faces + idxCumSum[i] for i, mesh in enumerate(meshList)])
+        newFaces = np.vstack(
+            [mesh.faces + idxCumSum[i] for i, mesh in enumerate(meshList)]
+        )
 
         faceAttr = {}
         for i, mesh in enumerate(meshList):
@@ -1518,40 +1655,43 @@ class GridBlockSupport(BlockSupportBase):
         for key, value in faceAttr.items():
             faceAttr[key] = np.hstack(value)
 
-        return trimesh.Trimesh(vertices=newVerts, faces=newFaces, face_attributes=faceAttr, process=False)
+        return trimesh.Trimesh(
+            vertices=newVerts, faces=newFaces, face_attributes=faceAttr, process=False
+        )
 
     def section_multiplane(self, volume, plane_origin, plane_normal, heights):
-
         # turn line segments into Path2D/Path3D objects
         from trimesh.exchange.load import load_path
         import trimesh.exchange
 
         # do a multiplane intersection
-        lines, transforms, faces = trimesh.intersections.mesh_multiplane(mesh=volume,
-                                                                         plane_normal=plane_normal,
-                                                                         plane_origin=plane_origin,
-                                                                         heights=heights)
+        lines, transforms, faces = trimesh.intersections.mesh_multiplane(
+            mesh=volume,
+            plane_normal=plane_normal,
+            plane_origin=plane_origin,
+            heights=heights,
+        )
 
         out = zip(lines, transforms, faces)
         return list(out)
 
         if False:
-
             # turn the line segments into Path2D objects
             paths = [None] * len(lines)
-            for i, faces, segments, T in zip(range(len(lines)),
-                                             faces,
-                                             lines,
-                                             transforms):
+            for i, faces, segments, T in zip(
+                range(len(lines)), faces, lines, transforms
+            ):
                 if len(segments) > 0:
                     paths[i] = load_path(
-                        segments,
-                        metadata={'to_3D': T, 'face_index': faces})
+                        segments, metadata={"to_3D": T, "face_index": faces}
+                    )
             return paths
 
         return lines, transforms, faces
 
-    def generateGridSlices(self) -> Tuple[List[trimesh.path.Path2D], List[trimesh.path.Path2D]]:
+    def generateGridSlices(
+        self,
+    ) -> Tuple[List[trimesh.path.Path2D], List[trimesh.path.Path2D]]:
         """
         Slices the support volume (:attr:`~BlockSupportBase.supportVolume`) in a grid based on :attr:`gridSpacing`.
 
@@ -1572,21 +1712,25 @@ class GridBlockSupport(BlockSupportBase):
         # Obtain the section through the STL extension using Trimesh Algorithm (Shapely)
         midX = (bx[0] + bx[1]) / 2.0
         bottomX = -1.0 * np.ceil((midX - bx[0]) / spacingX) * spacingX
-        topX = 1. * np.ceil((bx[1] - midX) / spacingX) * spacingX + 1e-8
+        topX = 1.0 * np.ceil((bx[1] - midX) / spacingX) * spacingX + 1e-8
 
         # Generate the support slices of the section
-        sectionsX = self.section_multiplane(supportGeom,
-                                            plane_origin=[midX, 0.0, 0.0],
-                                            plane_normal=[1.0, 0.0, 0.0],
-                                            heights=np.arange(bottomX, topX, spacingX))
+        sectionsX = self.section_multiplane(
+            supportGeom,
+            plane_origin=[midX, 0.0, 0.0],
+            plane_normal=[1.0, 0.0, 0.0],
+            heights=np.arange(bottomX, topX, spacingX),
+        )
         midY = (by[0] + by[1]) / 2.0
         bottomY = -1.0 * np.ceil((midY - by[0]) / spacingY) * spacingY
         topY = 1.0 * np.ceil((by[1] - midY) / spacingY) * spacingY + 1e-8
 
-        sectionsY = self.section_multiplane(supportGeom,
-                                            plane_origin=[0.0, midY, 0.0],
-                                            plane_normal=[0.0, 1.0, 0.0],
-                                            heights=np.arange(bottomY, topY, spacingY))
+        sectionsY = self.section_multiplane(
+            supportGeom,
+            plane_origin=[0.0, midY, 0.0],
+            plane_normal=[0.0, 1.0, 0.0],
+            heights=np.arange(bottomY, topY, spacingY),
+        )
 
         return sectionsX, sectionsY
 
@@ -1613,20 +1757,22 @@ class GridBlockSupport(BlockSupportBase):
         borderGeoms = []
 
         for mesh in meshSupports:
-
             faceOrderIds = []
             cntId = 0
 
-            attrOrder = mesh.face_attributes.get('order', False)
-            attrType = mesh.face_attributes.get('type', False)
+            attrOrder = mesh.face_attributes.get("order", False)
+            attrType = mesh.face_attributes.get("type", False)
 
             if attrOrder is False or attrType is False:
                 continue
 
             # Seperate the mesh types and process independently for convenience
-            lines, face_index = trimesh.intersections.mesh_plane(mesh=mesh, plane_normal=[0.0, 0, 1.0],
-                                                                 plane_origin=[0, 0, z],
-                                                                 return_faces=True)
+            lines, face_index = trimesh.intersections.mesh_plane(
+                mesh=mesh,
+                plane_normal=[0.0, 0, 1.0],
+                plane_origin=[0, 0, z],
+                return_faces=True,
+            )
 
             # Obtain the order and type ids based on the grid
             orderId = attrOrder[face_index]
@@ -1649,7 +1795,6 @@ class GridBlockSupport(BlockSupportBase):
             Dependent on the type order these in sequential order if part of the grid outline is the first group
             """
             for split in splitPiece:
-
                 # Determine the group type and order appropriately
                 if typeId[split[0]] == GridMeshType.BOUNDARY.value:
                     isBorder = True
@@ -1661,16 +1806,20 @@ class GridBlockSupport(BlockSupportBase):
 
                 if typeId[split[0]] == GridMeshType.SLICE_X.value:
                     # We can assume that the lines are co-linear and can be sorted in ascending order X Value
-                    coords = coords.reshape(-1,2)
-                    coords = coords[np.argsort(coords[:,1]), :].reshape(-1,2,2)
-                    path = trimesh.util.concatenate([trimesh.load_path(c) for c in coords])
+                    coords = coords.reshape(-1, 2)
+                    coords = coords[np.argsort(coords[:, 1]), :].reshape(-1, 2, 2)
+                    path = trimesh.util.concatenate(
+                        [trimesh.load_path(c) for c in coords]
+                    )
                     # [TODO] the above is not the most efficient way to resolve this
 
                 elif typeId[split[0]] == GridMeshType.SLICE_Y.value:
                     # We can assume that the lines are co-linear and can be sorted in ascending order Y Value
-                    coords = coords.reshape(-1,2)
-                    coords = coords[np.argsort(coords[:,0]), :].reshape(-1,2,2)
-                    path = trimesh.util.concatenate([trimesh.load_path(c) for c in coords])
+                    coords = coords.reshape(-1, 2)
+                    coords = coords[np.argsort(coords[:, 0]), :].reshape(-1, 2, 2)
+                    path = trimesh.util.concatenate(
+                        [trimesh.load_path(c) for c in coords]
+                    )
 
                 else:
                     # Load the connected paths (these will merge connected vertices)
@@ -1689,7 +1838,6 @@ class GridBlockSupport(BlockSupportBase):
                 and switch the ends of the paths to ensure consistent scanning.
                 """
                 while len(pEnts) > 0:
-
                     # find the nearest point to the end point
                     vEnd = path.vertices[p.end_points[1]]
 
@@ -1726,13 +1874,13 @@ class GridBlockSupport(BlockSupportBase):
 
                 # Add the ordered connected paths to the output of the slicing either as border or internal grid paths
                 for p in conPath:
-
                     if isBorder:
                         borderGeoms.append(p.discrete(path.vertices))
                     else:
                         geoms.append(p.discrete(path.vertices))
 
         return geoms, borderGeoms
+
 
 class GridBlockSupportGenerator(BlockSupportGenerator):
     """
@@ -1754,11 +1902,11 @@ class GridBlockSupportGenerator(BlockSupportGenerator):
 
         # Support teeth parameters
         self._supportTeethHeight = 1.5  # mm
-        self._supportTeethTopLength = 0.1 # mm
-        self._supportTeethBottomLength = 1.5 # mm
-        self._supportTeethBaseInterval = 0.2 # mm
-        self._supportTeethUpperPenetration = 0.2 # mm
-        self._supportWallThickness = 3.0 # mm
+        self._supportTeethTopLength = 0.1  # mm
+        self._supportTeethBottomLength = 1.5  # mm
+        self._supportTeethBaseInterval = 0.2  # mm
+        self._supportTeethUpperPenetration = 0.2  # mm
+        self._supportWallThickness = 3.0  # mm
 
         self._mergeMesh = False
         self._supportBorderDistance = 3.0
@@ -1766,7 +1914,7 @@ class GridBlockSupportGenerator(BlockSupportGenerator):
         self._trussAngle = 45
 
     def __str__(self):
-        return 'GridBlockSupportGenerator'
+        return "GridBlockSupportGenerator"
 
     @property
     def mergeMesh(self) -> bool:
@@ -1792,7 +1940,7 @@ class GridBlockSupportGenerator(BlockSupportGenerator):
 
     @property
     def useSupportSkin(self) -> bool:
-        """ Generates a truss support skin around the extruded boundary of the support """
+        """Generates a truss support skin around the extruded boundary of the support"""
         return self._useSupportSkin
 
     @useSupportSkin.setter
@@ -1801,7 +1949,7 @@ class GridBlockSupportGenerator(BlockSupportGenerator):
 
     @property
     def useSupportBorder(self):
-        """ Generates a border around each truss grid """
+        """Generates a border around each truss grid"""
         return self._useSupportBorder
 
     @useSupportBorder.setter
@@ -1823,6 +1971,7 @@ class GridBlockSupportGenerator(BlockSupportGenerator):
     @useLowerSupportTeeth.setter
     def useLowerSupportTeeth(self, value):
         self._useLowerSupportTeeth = value
+
     @property
     def supportBorderDistance(self) -> float:
         """
@@ -1844,7 +1993,7 @@ class GridBlockSupportGenerator(BlockSupportGenerator):
 
     @property
     def trussAngle(self) -> float:
-        """ The angle (degrees) used for generating the truss structures used in the support structure """
+        """The angle (degrees) used for generating the truss structures used in the support structure"""
         return self._trussAngle
 
     @trussAngle.setter
@@ -1853,14 +2002,13 @@ class GridBlockSupportGenerator(BlockSupportGenerator):
 
     @property
     def gridSpacing(self) -> List[float]:
-        """ The spacing of the grid truss structure within the block support """
+        """The spacing of the grid truss structure within the block support"""
         return self._gridSpacing
 
     @gridSpacing.setter
     def gridSpacing(self, spacing: List[float]):
-        """ The Grid Spacing used for the support structure """
+        """The Grid Spacing used for the support structure"""
         self._gridSpacing = spacing
-
 
     @property
     def supportTeethHeight(self) -> float:
@@ -1917,8 +2065,12 @@ class GridBlockSupportGenerator(BlockSupportGenerator):
     def supportTeethUpperPenetration(self, distance: float):
         self._supportTeethUpperPenetration = distance
 
-    def identifySupportRegions(self, part: Part, overhangAngle: float,
-                               findSelfIntersectingSupport: Optional[bool] = True) -> List[GridBlockSupport]:
+    def identifySupportRegions(
+        self,
+        part: Part,
+        overhangAngle: float,
+        findSelfIntersectingSupport: Optional[bool] = True,
+    ) -> List[GridBlockSupport]:
         """
         Extracts the overhang mesh and generates block regions given a part and target overhang angle. The algorithm
         uses a combination of boolean operations and ray intersection/projection to discriminate support regions.
@@ -1933,37 +2085,45 @@ class GridBlockSupportGenerator(BlockSupportGenerator):
 
         :return: A list of BlockSupports
         """
-        supportBlocks = super().identifySupportRegions(part, overhangAngle, findSelfIntersectingSupport)
+        supportBlocks = super().identifySupportRegions(
+            part, overhangAngle, findSelfIntersectingSupport
+        )
 
         gridBlocks = []
 
         for block in supportBlocks:
-            gridBlock = GridBlockSupport(block.supportObject,
-                                         block.supportVolume, block.supportSurface, block.intersectsPart)
+            gridBlock = GridBlockSupport(
+                block.supportObject,
+                block.supportVolume,
+                block.supportSurface,
+                block.intersectsPart,
+            )
 
             # Assign the GridBlock Parameters
             gridBlock.gridSpacing = self._gridSpacing
-            gridBlock.numSkinMeshSubdivideIterations = self._numSkinMeshSubdivideIterations
+            gridBlock.numSkinMeshSubdivideIterations = (
+                self._numSkinMeshSubdivideIterations
+            )
 
             # Support Teeth Parameters
             gridBlock.supportTeethHeight = self._supportTeethHeight
             gridBlock.supportTeethTopLength = self._supportTeethHeight
-            gridBlock.supportTeethBottomLength     = self._supportTeethBottomLength
-            gridBlock.supportTeethBaseInterval     = self._supportTeethBaseInterval
+            gridBlock.supportTeethBottomLength = self._supportTeethBottomLength
+            gridBlock.supportTeethBaseInterval = self._supportTeethBaseInterval
             gridBlock.supportTeethUpperPenetration = self._supportTeethUpperPenetration
             gridBlock.supportWallThickness = self._supportWallThickness
 
             # Options for generating the truss
-            gridBlock.useSupportSkin        = self._useSupportSkin
-            gridBlock.useSupportBorder      = self._useSupportBorder
+            gridBlock.useSupportSkin = self._useSupportSkin
+            gridBlock.useSupportBorder = self._useSupportBorder
 
-            gridBlock.useLowerSupportTeeth  = self._useLowerSupportTeeth
-            gridBlock.useUpperSupportTeeth  = self._useUpperSupportTeeth
+            gridBlock.useLowerSupportTeeth = self._useLowerSupportTeeth
+            gridBlock.useUpperSupportTeeth = self._useUpperSupportTeeth
 
             gridBlock.supportBorderDistance = self._supportBorderDistance
             gridBlock.trussWidth = self._trussWidth
             gridBlock.trussAngle = self._trussAngle
-            gridBlock.mergeMesh  = self._mergeMesh
+            gridBlock.mergeMesh = self._mergeMesh
             gridBlock._upperSurface = block._upperSurface
 
             gridBlocks.append(gridBlock)

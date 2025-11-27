@@ -3,6 +3,7 @@ A simple example showing how to use PySLM  with the IslandHatcher approach, whic
 island regions, which are tested for intersection and then the hatches generated are more efficiently clipped.
 """
 
+from matplotlib import pyplot as plt
 import numpy as np
 import time
 
@@ -13,8 +14,8 @@ import pyslm.visualise
 from pyslm import hatching as hatching
 
 # Imports the part and sets the geometry to  an STL file (frameGuide.stl)
-solidPart = pyslm.Part('inversePyramid')
-solidPart.setGeometry('../models/frameGuide.stl')
+solidPart = pyslm.Part("inversePyramid")
+solidPart.setGeometry("../models/frameGuide.stl")
 solidPart.dropToPlatform()
 
 solidPart.origin[0] = 5.0
@@ -70,50 +71,61 @@ if True:
 
     # Python sets are used to perform boolean operations on a set to identify unclipped islands
     intersectIslandsSet = set()
-    overlapIslandsSet= set()
+    overlapIslandsSet = set()
 
     # Iterate across all the islands
     for i in range(len(islands)):
-
         island = islands[i]
         s = island.boundary()
 
         if poly.overlaps(s):
-            overlapIslandsSet.add(i) # id
+            overlapIslandsSet.add(i)  # id
             overlapIslands.append(island)
 
         if poly.intersects(s):
             intersectIslandsSet.add(i)  # id
             intersectIslands.append(island)
 
-    unTouchedIslandSet = intersectIslandsSet-overlapIslandsSet
+    unTouchedIslandSet = intersectIslandsSet - overlapIslandsSet
     unTouchedIslands = [islands[i] for i in unTouchedIslandSet]
 
-    print('Finished Island Clipping')
+    print("Finished Island Clipping")
 
     fig, ax = pyslm.visualise.plotPolygon(geomSlice)
 
     # Plot using visualise.plotPolygon the original islands generated before intersection
     for island in islands:
         x, y = island.boundary().exterior.xy
-        pyslm.visualise.plotPolygon([np.vstack([x,y]).T], handle=(fig, ax))
+        pyslm.visualise.plotPolygon([np.vstack([x, y]).T], handle=(fig, ax))
 
     for island in intersectIslands:
         x, y = island.boundary().exterior.xy
-        pyslm.visualise.plotPolygon([np.vstack([x,y]).T], handle=(fig, ax),  plotFilled=True, lineColor='g', fillColor = '#19aeffff')
+        pyslm.visualise.plotPolygon(
+            [np.vstack([x, y]).T],
+            handle=(fig, ax),
+            plotFilled=True,
+            lineColor="g",
+            fillColor="#19aeffff",
+        )
 
     for island in overlapIslands:
         x, y = island.boundary().exterior.xy
-        pyslm.visualise.plotPolygon([np.vstack([x, y]).T], handle=(fig, ax), plotFilled=True, lineColor='b', fillColor = '#ff4141ff')
+        pyslm.visualise.plotPolygon(
+            [np.vstack([x, y]).T],
+            handle=(fig, ax),
+            plotFilled=True,
+            lineColor="b",
+            fillColor="#ff4141ff",
+        )
 
 
 startTime = time.time()
 
 # Perform the complete hatching operation
-print('Hatching Started')
+print("Hatching Started")
 
 layer = myHatcher.hatch(geomSlice)
-print('Completed Hatching')
+print("Completed Hatching")
 
 
 """
@@ -122,3 +134,5 @@ The order of scanning for the hatch region can be displayed by setting the param
 Arrows can be enables by setting the parameter plotArrows to True
 """
 pyslm.visualise.plot(layer, plot3D=False, plotOrderLine=True, plotArrows=False)
+
+plt.show()

@@ -16,8 +16,8 @@ import pyslm
 import matplotlib.pyplot as plt
 
 # Imports the part and sets the geometry to  an STL file (frameGuide.stl)
-solidPart = pyslm.Part('myFrameGuide')
-solidPart.setGeometry('../models/frameGuide.stl')
+solidPart = pyslm.Part("myFrameGuide")
+solidPart.setGeometry("../models/frameGuide.stl")
 
 
 """
@@ -39,11 +39,13 @@ slice = solidPart.getTrimeshSlice(14.0)
 
 # Rasterise and cast to a numpy array
 # The origin is set based on the minium XY bounding box of the part. Depending on the platform the user may
-sliceImage = slice.rasterize(pitch = resolution, origin= solidPart.boundingBox[:2])
+sliceImage = slice.rasterize(pitch=resolution, origin=solidPart.boundingBox[:2])
 sliceImage = np.array(sliceImage)
 
 # For convenience, the same function above is available directly from the Part class
 slice = solidPart.getBitmapSlice(14.0, resolution)
 
 fig = plt.figure()
-ax = plt.imshow(sliceImage,  cmap='gray', origin='lower')
+ax = plt.imshow(sliceImage, cmap="gray", origin="lower")
+
+plt.show()

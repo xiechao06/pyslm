@@ -2,6 +2,7 @@
 A simple example showing how to use PySLM for generating a Stripe Scan Strategy across a single layer and
 visualising the point exposures across the scan vectors and the 'effective' heat or exposure map of the layer.
 """
+
 import numpy as np
 import pyslm
 import pyslm.visualise
@@ -9,8 +10,8 @@ from pyslm import hatching as hatching
 import matplotlib.pyplot as plt
 
 # Imports the part and sets the geometry to  an STL file (frameGuide.stl)
-solidPart = pyslm.Part('myFrameGuide')
-solidPart.setGeometry('../models/frameGuide.stl')
+solidPart = pyslm.Part("myFrameGuide")
+solidPart.setGeometry("../models/frameGuide.stl")
 
 """
 Transform the part:
@@ -22,16 +23,18 @@ solidPart.rotation = np.array([0, 0, 30])
 solidPart.dropToPlatform()
 
 # Set te slice layer position
-z = 23.
+z = 23.0
 
 # Create a BasicIslandHatcher object for performing any hatching operations (
 myHatcher = hatching.BasicIslandHatcher()
 myHatcher.stripeWidth = 5.0
 
 # Set the base hatching parameters which are generated within Hatcher
-myHatcher.hatchAngle = 10 # [°] The angle used for the islands
-myHatcher.volumeOffsetHatch = 0.08 # [mm] Offset between internal and external boundary
-myHatcher.spotCompensation = 0.06 # [mm] Additional offset to account for laser spot size
+myHatcher.hatchAngle = 10  # [°] The angle used for the islands
+myHatcher.volumeOffsetHatch = 0.08  # [mm] Offset between internal and external boundary
+myHatcher.spotCompensation = (
+    0.06  # [mm] Additional offset to account for laser spot size
+)
 myHatcher.numInnerContours = 2
 myHatcher.numOuterContours = 1
 myHatcher.hatchSortMethod = hatching.AlternateSort()
@@ -51,10 +54,10 @@ for layerGeom in layer.geometry:
 
 bstyle = pyslm.geometry.BuildStyle()
 bstyle.bid = 1
-bstyle.laserSpeed = 200.0 # [mm/s]
-bstyle.laserPower = 200 # [W]
-bstyle.pointDistance = 60 # [μm]
-bstyle.pointExposureTime = 30 # [μs]
+bstyle.laserSpeed = 200.0  # [mm/s]
+bstyle.laserPower = 200  # [W]
+bstyle.pointDistance = 60  # [μm]
+bstyle.pointExposureTime = 30  # [μs]
 
 model = pyslm.geometry.Model()
 model.mid = 1
@@ -71,17 +74,18 @@ exposurePoints = pyslm.hatching.getExposurePoints(layer, model)
 
 # Plot the heatmap based on the point exposure and the chosen resolution
 # Currently the part and z-layer is required to generate a bitmap which covers the part geometry.
-fig, ax = pyslm.visualise.plotHeatMap(solidPart, z, exposurePoints,  resolution)
+fig, ax = pyslm.visualise.plotHeatMap(solidPart, z, exposurePoints, resolution)
 
 # Plot all the exposure points
 fig, ax = plt.subplots()
-ax.axis('equal')
+ax.axis("equal")
 
-plt.scatter(exposurePoints[:,0], exposurePoints[:,1], marker='o', linestyle='None')
+plt.scatter(exposurePoints[:, 0], exposurePoints[:, 1], marker="o", linestyle="None")
 
 # Plot the exposure points
-pyslm.visualise.plot(layer, plot3D=False, handle=(fig,ax))
+pyslm.visualise.plot(layer, plot3D=False, handle=(fig, ax))
 
 # Plot the corresponding layers
 pyslm.visualise.plot(layer, plot3D=False, plotOrderLine=True, plotArrows=False)
 
+plt.show()

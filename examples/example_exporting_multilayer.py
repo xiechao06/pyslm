@@ -8,6 +8,7 @@ geometry and using a Stripe Hatch Scan Strategy. The file is exported using the 
 imported to visualise the layer.
 """
 
+from matplotlib import pyplot as plt
 import pyslm
 import pyslm.analysis
 import pyslm.visualise
@@ -18,8 +19,8 @@ from libSLM.translators import mtt
 
 from pyslm import geometry
 
-solidPart = pyslm.Part('nut')
-solidPart.setGeometry('../models/nut.stl')
+solidPart = pyslm.Part("nut")
+solidPart.setGeometry("../models/nut.stl")
 solidPart.origin = [5.0, 10.0, 0.0]
 solidPart.dropToPlatform()
 
@@ -75,8 +76,12 @@ BuildStyle.bid = 1
 
 # Set the laser parameters for the Contour Build Style
 BuildStyle.laserPower = 200  # W
-BuildStyle.laserSpeed = 500  # mm/s - Note this is used on some systems but should be set
-BuildStyle.laserFocus = 0.0  # mm - (Optional) Some new systems can modify the focus position real-time.
+BuildStyle.laserSpeed = (
+    500  # mm/s - Note this is used on some systems but should be set
+)
+BuildStyle.laserFocus = (
+    0.0  # mm - (Optional) Some new systems can modify the focus position real-time.
+)
 
 """
 The point exposure parameters are specified for some systems (typically Q-Switch Pulse Lasers)
@@ -86,7 +91,9 @@ The point exposure parameters are specified for some systems (typically Q-Switch
 BuildStyle.pointDistance = 50  # μm - Distance between exposure points
 BuildStyle.pointExposureTime = 80  # ms - Exposure time
 BuildStyle.laserId = 1
-BuildStyle.laserMode = geometry.LaserMode.Pulse # Non-continious laser mode (=1), CW laser mode = (0)
+BuildStyle.laserMode = (
+    geometry.LaserMode.Pulse
+)  # Non-continious laser mode (=1), CW laser mode = (0)
 
 model.buildStyles.append(BuildStyle)
 
@@ -94,7 +101,7 @@ layer_list = []
 layerId = 0
 
 for i in np.arange(0.0, solidPart.boundingBox[5], 0.5):
-    myHatcher.hatchAngle += 66.7 # [deg]
+    myHatcher.hatchAngle += 66.7  # [deg]
 
     geomSlice = solidPart.getVectorSlice(i)
     layer = myHatcher.hatch(geomSlice)
@@ -104,7 +111,7 @@ for i in np.arange(0.0, solidPart.boundingBox[5], 0.5):
         geo.bid = BuildStyle.bid
 
     # The layer height is set in integer increment of microns to ensure no rounding error during manufacturing
-    layer.z = int(30*i) # [mu m]
+    layer.z = int(30 * i)  # [mu m]
     layer.layerId = layerId
     layer_list.append(layer)
 
@@ -134,10 +141,22 @@ modelRead = mttReader.models
 """ 
 Plot the laser id used for each hatch vector used. A lambda function is used to plot this. 
 """
+
+
 def plotLaserId(models, hatchGeom):
-    buildStyle = pyslm.analysis.utils.getBuildStyleById(models, hatchGeom.mid, hatchGeom.bid)
-    return np.tile(buildStyle.laserId, [int(len(hatchGeom.coords)/2),1])
+    buildStyle = pyslm.analysis.utils.getBuildStyleById(
+        models, hatchGeom.mid, hatchGeom.bid
+    )
+    return np.tile(buildStyle.laserId, [int(len(hatchGeom.coords) / 2), 1])
 
 
-(fig, ax) = pyslm.visualise.plot(readLayers[0], plot3D=False, plotOrderLine=True, plotArrows=False,
-                                            index=lambda hatchGeom :plotLaserId([model], hatchGeom) )
+(fig, ax) = pyslm.visualise.plot(
+    readLayers[0],
+    plot3D=False,
+    plotOrderLine=True,
+    plotArrows=False,
+    index=lambda hatchGeom: plotLaserId([model], hatchGeom),
+)
+
+
+plt.show()

@@ -12,7 +12,9 @@ from .sorting import AlternateSort, BaseSort, LinearSort
 from ..geometry import Layer, Model, ContourGeometry, HatchGeometry
 
 
-def getExposurePoints(layer: Layer, models: List[Model], includePowerDeposited: bool = True):
+def getExposurePoints(
+    layer: Layer, models: List[Model], includePowerDeposited: bool = True
+):
     """
     A utility method to return a list of exposure points given a :class:`Layer` with an associated
     :class:`Model` which contains the :class:`BuildStyle` that provides the point
@@ -34,21 +36,25 @@ def getExposurePoints(layer: Layer, models: List[Model], includePowerDeposited: 
     exposurePoints = []
 
     for layerGeom in layer.geometry:
-
         # Get the model given the mid
         model = next(x for x in models if x.mid == layerGeom.mid)
 
-        #Get the buildstyle from the model
+        # Get the buildstyle from the model
         buildStyle = next(x for x in model.buildStyles if x.bid == layerGeom.bid)
 
         if buildStyle.pointDistance < 1:
-            raise ValueError('The point distance parameter in the buildstyle (mid: {:d}, bid: {:d}) must be set'.format(model.mid, buildStyle.bid))
+            raise ValueError(
+                "The point distance parameter in the buildstyle (mid: {:d}, bid: {:d}) must be set".format(
+                    model.mid, buildStyle.bid
+                )
+            )
 
-        pointDistance = buildStyle.pointDistance * 1e-3 # Convert to mm
-        energyPerExposure = buildStyle.laserPower * (buildStyle.pointExposureTime * 1e-6) # convert to mu s
+        pointDistance = buildStyle.pointDistance * 1e-3  # Convert to mm
+        energyPerExposure = buildStyle.laserPower * (
+            buildStyle.pointExposureTime * 1e-6
+        )  # convert to mu s
 
         if isinstance(layerGeom, HatchGeometry):
-
             # Calculate the length of the hatch vector and the direction
             coords = layerGeom.coords.reshape(-1, 2, 2)
             delta = np.diff(coords, axis=1).reshape(-1, 2)
@@ -58,7 +64,7 @@ def getExposurePoints(layer: Layer, models: List[Model], includePowerDeposited: 
             dir = -1.0 * delta / lineDist
 
             # Calculate the number of exposure points across the hatch vector based on its length
-            numPoints = np.ceil(lineDist / pointDistance).astype(np.int)
+            numPoints = np.ceil(lineDist / pointDistance).astype(int)
 
             # Pre-populate some arrays to extrapolate the exposure points from
             totalPoints = int(np.sum(numPoints))
@@ -72,9 +78,9 @@ def getExposurePoints(layer: Layer, models: List[Model], includePowerDeposited: 
             idx = 0
             for i in range(len(numPoints)):
                 j = int(numPoints[i])
-                idxArray[idx:idx + j, 0] = np.arange(0, j)
-                pntsArray[idx:idx + j] = p0[i]
-                dirArray[idx:idx + j] = dir[i]
+                idxArray[idx : idx + j, 0] = np.arange(0, j)
+                pntsArray[idx : idx + j] = p0[i]
+                dirArray[idx : idx + j] = dir[i]
                 idx += j
 
             # Calculate the hatch exposure points
@@ -82,7 +88,7 @@ def getExposurePoints(layer: Layer, models: List[Model], includePowerDeposited: 
 
             # Add an extra column for the energy deposited per exposure
             if includePowerDeposited:
-                col = np.ones([len(hatchExposurePoints),1])
+                col = np.ones([len(hatchExposurePoints), 1])
                 col[:] = energyPerExposure
 
                 hatchExposurePoints = np.hstack([hatchExposurePoints, col])
@@ -91,7 +97,6 @@ def getExposurePoints(layer: Layer, models: List[Model], includePowerDeposited: 
             exposurePoints.append(hatchExposurePoints)
 
         if isinstance(layerGeom, ContourGeometry):
-
             # Calculate the length of the hatch vector and the direction
             coords = layerGeom.coords
 
@@ -102,7 +107,7 @@ def getExposurePoints(layer: Layer, models: List[Model], includePowerDeposited: 
             dir = 1.0 * delta / lineDist
 
             # Calculate the number of exposure points across the hatch vector based on its length
-            numPoints = np.ceil(lineDist / pointDistance).astype(np.int)
+            numPoints = np.ceil(lineDist / pointDistance).astype(int)
 
             # Pre-populate some arrays to extrapolate the exposure points from
             totalPoints = int(np.sum(numPoints))
@@ -116,9 +121,9 @@ def getExposurePoints(layer: Layer, models: List[Model], includePowerDeposited: 
             idx = 0
             for i in range(len(numPoints)):
                 j = int(numPoints[i])
-                idxArray[idx:idx + j, 0] = np.arange(0, j)
-                pntsArray[idx:idx + j] = p0[i]
-                dirArray[idx:idx + j] = dir[i]
+                idxArray[idx : idx + j, 0] = np.arange(0, j)
+                pntsArray[idx : idx + j] = p0[i]
+                dirArray[idx : idx + j] = dir[i]
                 idx += j
 
             # Calculate the hatch exposure points
@@ -126,7 +131,7 @@ def getExposurePoints(layer: Layer, models: List[Model], includePowerDeposited: 
 
             # Add an extra column for the energy deposited per exposure
             if includePowerDeposited:
-                col = np.ones([len(hatchExposurePoints),1])
+                col = np.ones([len(hatchExposurePoints), 1])
                 col[:] = energyPerExposure
 
                 hatchExposurePoints = np.hstack([hatchExposurePoints, col])
@@ -157,7 +162,7 @@ class BaseHatcher(abc.ABC):
     collections of :class:`~pyslm.geometry.LayerGeometry` accordingly.
     """
 
-    CLIPPER_SCALEFACTOR : int = int(1e5)
+    CLIPPER_SCALEFACTOR: int = int(1e5)
     """ 
     The scaling factor used for polygon clipping and offsetting in `PyClipr <https://pypi.org/project/pyclipr/>`_ 
     for the decimal component of each polygon coordinate. This should be set to inverse of the required decimal 
@@ -173,7 +178,7 @@ class BaseHatcher(abc.ABC):
         pass
 
     def __str__(self):
-        return 'BaseHatcher <{:s}>'.format(self.name)
+        return "BaseHatcher <{:s}>".format(self.name)
 
     @staticmethod
     def clipperToHatchArray(coords: np.ndarray) -> np.array:
@@ -192,7 +197,7 @@ class BaseHatcher(abc.ABC):
         """
         Returns the accuracy of the polygon clipping depending on the chosen scale factor.
         """
-        return 1. / float(cls.CLIPPER_SCALEFACTOR)
+        return 1.0 / float(cls.CLIPPER_SCALEFACTOR)
 
     @staticmethod
     def offsetPolygons(polygons, offset: float):
@@ -230,7 +235,6 @@ class BaseHatcher(abc.ABC):
 
         return offsetContours
 
-
     @staticmethod
     def polygonBoundingBox(obj: Any) -> np.ndarray:
         """
@@ -252,7 +256,9 @@ class BaseHatcher(abc.ABC):
             bboxList.append(np.hstack([np.min(path, axis=0), np.max(path, axis=0)]))
 
         bboxList = np.vstack(bboxList)
-        bbox = np.hstack([np.min(bboxList[:, :2], axis=0), np.max(bboxList[:, -2:], axis=0)])
+        bbox = np.hstack(
+            [np.min(bboxList[:, :2], axis=0), np.max(bboxList[:, -2:], axis=0)]
+        )
 
         return bbox
 
@@ -270,10 +276,11 @@ class BaseHatcher(abc.ABC):
         bboxList = [BaseHatcher.polygonBoundingBox(boundary) for boundary in boundaries]
 
         bboxList = np.vstack(bboxList)
-        bbox = np.hstack([np.min(bboxList[:, :2], axis=0), np.max(bboxList[:, -2:], axis=0)])
+        bbox = np.hstack(
+            [np.min(bboxList[:, :2], axis=0), np.max(bboxList[:, -2:], axis=0)]
+        )
 
         return bbox
-
 
     @staticmethod
     def clipLines(paths, lines):
@@ -297,12 +304,17 @@ class BaseHatcher(abc.ABC):
         pc2 = pyclipr.Clipper()
         pc2.scaleFactor = int(BaseHatcher.CLIPPER_SCALEFACTOR)
 
-        pc2.addPaths(lines.reshape(-1,2,3), pyclipr.Subject, True)
+        pc2.addPaths(lines.reshape(-1, 2, 3), pyclipr.Subject, True)
         pc2.addPaths(paths, pyclipr.Clip)
-        out = pc2.execute(pyclipr.Intersection, pyclipr.FillRule.NonZero, returnOpenPaths=True, returnZ=True)
+        out = pc2.execute(
+            pyclipr.Intersection,
+            pyclipr.FillRule.NonZero,
+            returnOpenPaths=True,
+            returnZ=True,
+        )
 
         lineXY = np.array(out[1])
-        lineZ  = np.array(out[3])
+        lineZ = np.array(out[3])
 
         return np.dstack([lineXY, lineZ])
 
@@ -328,18 +340,25 @@ class BaseHatcher(abc.ABC):
 
         pc2.addPaths(lineList, pyclipr.Subject, True)
         pc2.addPaths(paths, pyclipr.Clip, False)
-        out = pc2.execute(pyclipr.Intersection, pyclipr.FillRule.NonZero, returnOpenPaths=True, returnZ=True)
+        out = pc2.execute(
+            pyclipr.Intersection,
+            pyclipr.FillRule.NonZero,
+            returnOpenPaths=True,
+            returnZ=True,
+        )
 
         outPaths = []
 
         for i, path in enumerate(out[1]):
             lineXY = np.array(path)
-            lineZ = np.array(out[3][i]).reshape(-1,1)
+            lineZ = np.array(out[3][i]).reshape(-1, 1)
             outPaths.append(np.hstack([lineXY, lineZ]))
 
         return outPaths
 
-    def generateHatching(self, paths, hatchSpacing: float, hatchAngle: Optional[float] = 90.0) -> np.ndarray:
+    def generateHatching(
+        self, paths, hatchSpacing: float, hatchAngle: Optional[float] = 90.0
+    ) -> np.ndarray:
         """
         Generates un-clipped hatches which is guaranteed to cover the entire polygon region base on the maximum extent
         of the polygon bounding box
@@ -355,7 +374,7 @@ class BaseHatcher(abc.ABC):
         The hatch angle
         Note the angle is reversed here because the rotation matrix is counter-clockwise
         """
-        theta_h = np.radians(hatchAngle)# * -1.0)  # 'rad'
+        theta_h = np.radians(hatchAngle)  # * -1.0)  # 'rad'
 
         # Get the bounding box of the paths
         bbox = self.boundaryBoundingBox(paths)
@@ -368,20 +387,21 @@ class BaseHatcher(abc.ABC):
         bboxRadius = np.sqrt(diagonal.dot(diagonal))
 
         # Construct a square which wraps the radius
-        x = np.tile(np.arange(-bboxRadius, bboxRadius, hatchSpacing, dtype=np.float32).reshape(-1, 1), (2)).flatten()
+        x = np.tile(
+            np.arange(-bboxRadius, bboxRadius, hatchSpacing, dtype=np.float32).reshape(
+                -1, 1
+            ),
+            (2),
+        ).flatten()
         y = np.array([-bboxRadius, bboxRadius])
         y = np.resize(y, x.shape)
         z = np.arange(0, x.shape[0] / 2, 0.5).astype(np.int64)
 
-        coords = np.hstack([x.reshape(-1, 1),
-                            y.reshape(-1, 1),
-                            z.reshape(-1, 1)])
+        coords = np.hstack([x.reshape(-1, 1), y.reshape(-1, 1), z.reshape(-1, 1)])
 
         # Create the 2D rotation matrix with an additional row, column to preserve the hatch order
         c, s = np.cos(theta_h), np.sin(theta_h)
-        R = np.array([(c, -s, 0),
-                      (s, c, 0),
-                      (0, 0, 1.0)])
+        R = np.array([(c, -s, 0), (s, c, 0), (0, 0, 1.0)])
 
         # Apply the rotation matrix and translate to bounding box centre
         coords = np.matmul(R, coords.T)
@@ -414,8 +434,7 @@ class InnerHatchRegion(abc.ABC):
     """
 
     def __init__(self):
-
-        self._origin =  np.array([[0,0]])
+        self._origin = np.array([[0, 0]])
         self._orientation = 0.0
 
         self._region = []
@@ -451,7 +470,7 @@ class InnerHatchRegion(abc.ABC):
 
         # Apply the rotation matrix and translate to bounding box centre
         coords = np.matmul(R, coords.T).T
-        coords[:,:2] += self._origin
+        coords[:, :2] += self._origin
 
         return coords
 
@@ -465,8 +484,7 @@ class InnerHatchRegion(abc.ABC):
         """
         # Create the rotation matrix
         c, s = np.cos(self._orientation), np.sin(self._orientation)
-        R = np.array([(c, -s),
-                      (s, c)])
+        R = np.array([(c, -s), (s, c)])
         return R
 
     def rotationMatrix3D(self) -> np.ndarray:
@@ -478,9 +496,7 @@ class InnerHatchRegion(abc.ABC):
         """
         # Create the rotation matrix
         c, s = np.cos(self._orientation), np.sin(self._orientation)
-        R = np.array([(c, -s, 0),
-                      (s, c, 0),
-                      (0, 0, 1.0)])
+        R = np.array([(c, -s, 0), (s, c, 0), (0, 0, 1.0)])
 
         return R
 
@@ -498,7 +514,7 @@ class InnerHatchRegion(abc.ABC):
 
     @property
     def origin(self):
-        """ The origin is the :math:`(x',y')` position of the local coordinate system. """
+        """The origin is the :math:`(x',y')` position of the local coordinate system."""
         return self._origin
 
     @origin.setter
@@ -522,11 +538,11 @@ class InnerHatchRegion(abc.ABC):
         self._requiresClipping = clippingState
 
     def __str__(self):
-        return 'InnerHatchRegion <{:s}>'
+        return "InnerHatchRegion <{:s}>"
 
     @abc.abstractmethod
     def boundary(self) -> ShapelyPolygon:
-        """ The boundary of the internal region
+        """The boundary of the internal region
 
         :raises: :class:`NotImplementedError`
         """
@@ -594,7 +610,6 @@ class Hatcher(BaseHatcher):
     """
 
     def __init__(self):
-
         super().__init__()
 
         # Private attributes related to the contour
@@ -614,7 +629,7 @@ class Hatcher(BaseHatcher):
 
     @property
     def hatchDistance(self) -> float:
-        """ The distance between adjacent hatch scan vectors. """
+        """The distance between adjacent hatch scan vectors."""
         return self._hatchDistance
 
     @hatchDistance.setter
@@ -636,8 +651,8 @@ class Hatcher(BaseHatcher):
     def layerAngleIncrement(self) -> float:
         """
         An additional offset used to increment the hatch angle between layers in degrees. This is typically set to
-        66.6 :math:`^\circ` per layer to provide additional uniformity of the scan vectors across multiple layers.
-        By default this is set to `0.0`. """
+        66.6° per layer to provide additional uniformity of the scan vectors across multiple layers.
+        By default this is set to `0.0`."""
         return self._layerAngleIncrement
 
     @layerAngleIncrement.setter
@@ -646,16 +661,17 @@ class Hatcher(BaseHatcher):
 
     @property
     def hatchSortMethod(self):
-        """ The hatch sort method used once the hatch vectors have been generated """
+        """The hatch sort method used once the hatch vectors have been generated"""
         return self._hatchSortMethod
 
     @hatchSortMethod.setter
     def hatchSortMethod(self, sortObj: Any):
-
         if sortObj is None:
             pass
         elif not isinstance(sortObj, BaseSort):
-            raise TypeError("The Hatch Sort Method should be derived from the BaseSort class")
+            raise TypeError(
+                "The Hatch Sort Method should be derived from the BaseSort class"
+            )
 
         self._hatchSortMethod = sortObj
 
@@ -730,7 +746,7 @@ class Hatcher(BaseHatcher):
 
     @property
     def hatchingEnabled(self) -> bool:
-        """ If the internal hatch region should be processed (default: `True`)."""
+        """If the internal hatch region should be processed (default: `True`)."""
         return self._hatchingEnabled
 
     @hatchingEnabled.setter
@@ -758,7 +774,6 @@ class Hatcher(BaseHatcher):
         hatchLayerGeometries = []
 
         for i in range(self._numOuterContours):
-
             if i > 0:
                 offsetDelta -= self._contourOffset
 
@@ -773,14 +788,12 @@ class Hatcher(BaseHatcher):
 
         # Repeat for inner contours
         for i in range(self._numInnerContours):
-
             if (self._numOuterContours == 0 and i > 0) or self._numOuterContours > 0:
-                    offsetDelta -= self._contourOffset
+                offsetDelta -= self._contourOffset
 
             offsetBoundary = self.offsetBoundary(boundaryFeature, offsetDelta)
 
             for path in offsetBoundary:
-
                 contourGeometry = ContourGeometry()
                 coords = np.vstack([path, path[0]])
                 contourGeometry.coords = coords
@@ -801,8 +814,8 @@ class Hatcher(BaseHatcher):
             # Hatch angle will change per layer
             # TODO change the layer angle increment
             layerHatchAngle = np.mod(self._hatchAngle + self._layerAngleIncrement, 180)
-            #layerHatchAngle = float(self._hatchAngle + self._layerAngleIncrement)
-            #layerHatchAngle -= np.floor(layerHatchAngle / 360. + 0.5) * 360.
+            # layerHatchAngle = float(self._hatchAngle + self._layerAngleIncrement)
+            # layerHatchAngle -= np.floor(layerHatchAngle / 360. + 0.5) * 360.
 
             # The layer hatch angle needs to be bound by +ve X vector (i.e. -90 < theta_h < 90 )
             if layerHatchAngle > 90:
@@ -817,7 +830,6 @@ class Hatcher(BaseHatcher):
 
             # Merge the lines together
             if len(clippedPaths) > 0:
-
                 clippedLines = BaseHatcher.clipperToHatchArray(clippedPaths)
 
                 # Extract only x-y coordinates and sort based on the pseudo-order stored in the z component.
@@ -851,14 +863,18 @@ class Hatcher(BaseHatcher):
 
                 # Hatch angle will change per layer
                 # TODO change the layer angle increment
-                layerHatchAngle = np.mod(self._hatchAngle + self._layerAngleIncrement, 180)
+                layerHatchAngle = np.mod(
+                    self._hatchAngle + self._layerAngleIncrement, 180
+                )
 
                 # The layer hatch angle needs to be bound by +ve X vector (i.e. -90 < theta_h < 90 )
                 if layerHatchAngle > 90:
                     layerHatchAngle = layerHatchAngle - 180
 
                 # Generate the un-clipped hatch regions based on the layer hatchAngle and hatch distance
-                hatches = self.generateHatching(paths, self._hatchDistance, layerHatchAngle)
+                hatches = self.generateHatching(
+                    paths, self._hatchDistance, layerHatchAngle
+                )
 
                 # Clip the hatch fill to the boundary
                 clippedPaths = self.clipLines(paths, hatches)
@@ -875,8 +891,6 @@ class Hatcher(BaseHatcher):
                 clippedLines = clippedLines[id, :, :]
 
                 scanVectors.append(clippedLines)
-
-
 
         if self._scanContourFirst:
             layer.geometry.extend(contourLayerGeometries + hatchLayerGeometries)
@@ -899,7 +913,6 @@ class StripeHatcher(Hatcher):
     """
 
     def __init__(self):
-
         super().__init__()
 
         self._stripeWidth = 5.0
@@ -907,11 +920,11 @@ class StripeHatcher(Hatcher):
         self._stripeOffset = 0.5
 
     def __str__(self):
-        return 'StripeHatcher'
+        return "StripeHatcher"
 
     @property
     def stripeWidth(self) -> float:
-        """ The stripe width """
+        """The stripe width"""
         return self._stripeWidth
 
     @stripeWidth.setter
@@ -920,7 +933,7 @@ class StripeHatcher(Hatcher):
 
     @property
     def stripeOverlap(self) -> float:
-        """ The length of overlap between adjacent stripes"""
+        """The length of overlap between adjacent stripes"""
         return self._stripeOverlap
 
     @stripeOverlap.setter
@@ -938,7 +951,9 @@ class StripeHatcher(Hatcher):
     def stripeOffset(self, offset: float):
         self._stripeOffset = offset
 
-    def generateHatching(self, paths, hatchSpacing: float, hatchAngle: float = 90.0) -> np.ndarray:
+    def generateHatching(
+        self, paths, hatchSpacing: float, hatchAngle: float = 90.0
+    ) -> np.ndarray:
         """
         Generates un-clipped hatches which is guaranteed to cover the entire polygon region based on the maximum extent
         of the polygon bounding box
@@ -975,9 +990,15 @@ class StripeHatcher(Hatcher):
             startX = -bboxRadius + i * self._stripeWidth - self._stripeOverlap
             endX = startX + self._stripeWidth + self._stripeOverlap
 
-            y = np.tile(np.arange(-bboxRadius + np.mod(i, 2) * self._stripeOffset * hatchSpacing,
-                                  bboxRadius + np.mod(i, 2) * self._stripeOffset * hatchSpacing, hatchSpacing,
-                                  dtype=np.float32).reshape(-1, 1), (2)).flatten()
+            y = np.tile(
+                np.arange(
+                    -bboxRadius + np.mod(i, 2) * self._stripeOffset * hatchSpacing,
+                    bboxRadius + np.mod(i, 2) * self._stripeOffset * hatchSpacing,
+                    hatchSpacing,
+                    dtype=np.float32,
+                ).reshape(-1, 1),
+                (2),
+            ).flatten()
             # x = np.tile(np.arange(startX, endX, hatchSpacing, dtype=np.float32).reshape(-1, 1), (2)).flatten()
             x = np.array([startX, endX])
             x = np.resize(x, y.shape)
@@ -985,17 +1006,15 @@ class StripeHatcher(Hatcher):
 
             hatchOrder += x.shape[0] / 2
 
-            coords += [np.hstack([x.reshape(-1, 1),
-                                  y.reshape(-1, 1),
-                                  z.reshape(-1, 1)])]
+            coords += [
+                np.hstack([x.reshape(-1, 1), y.reshape(-1, 1), z.reshape(-1, 1)])
+            ]
 
         coords = np.vstack(coords)
 
         # Create the rotation matrix
         c, s = np.cos(theta_h), np.sin(theta_h)
-        R = np.array([(c, -s, 0),
-                      (s, c, 0),
-                      (0, 0, 1.0)])
+        R = np.array([(c, -s, 0), (s, c, 0), (0, 0, 1.0)])
 
         # Apply the rotation matrix and translate to bounding box centre
         coords = np.matmul(R, coords.T)
@@ -1028,7 +1047,6 @@ class BasicIslandHatcher(Hatcher):
     """
 
     def __init__(self):
-
         super().__init__()
 
         self._islandWidth = 5.0
@@ -1036,11 +1054,11 @@ class BasicIslandHatcher(Hatcher):
         self._islandOffset = 0.5
 
     def __str__(self):
-        return 'IslandHatcher'
+        return "IslandHatcher"
 
     @property
     def islandWidth(self) -> float:
-        """ The island width """
+        """The island width"""
         return self._islandWidth
 
     @islandWidth.setter
@@ -1049,7 +1067,7 @@ class BasicIslandHatcher(Hatcher):
 
     @property
     def islandOverlap(self) -> float:
-        """ The length of overlap between adjacent islands"""
+        """The length of overlap between adjacent islands"""
         return self._islandOverlap
 
     @islandOverlap.setter
@@ -1068,7 +1086,9 @@ class BasicIslandHatcher(Hatcher):
     def islandOffset(self, offset: float):
         self._islandOffset = offset
 
-    def generateHatching(self, paths, hatchSpacing: float, hatchAngle: float = 90.0) -> np.ndarray:
+    def generateHatching(
+        self, paths, hatchSpacing: float, hatchAngle: float = 90.0
+    ) -> np.ndarray:
         """
         Generates un-clipped hatches which is guaranteed to cover the entire polygon region base on the maximum extent
         of the polygon bounding box.
@@ -1099,7 +1119,6 @@ class BasicIslandHatcher(Hatcher):
 
         for i in np.arange(0, numIslands):
             for j in np.arange(0, numIslands):
-
                 startX = -bboxRadius + i * (self._islandWidth) - self._islandOverlap
                 endX = startX + (self._islandWidth) + self._islandOverlap
 
@@ -1107,36 +1126,52 @@ class BasicIslandHatcher(Hatcher):
                 endY = startY + (self._islandWidth) + self._islandOverlap
 
                 if np.mod(i + j, 2):
-                    y = np.tile(np.arange(startY + np.mod(i + j, 2) * self._islandOffset * hatchSpacing,
-                                          endY + np.mod(i + j, 2) * self._islandOffset * hatchSpacing, hatchSpacing,
-                                          dtype=np.float32).reshape(-1, 1), (2)).flatten()
+                    y = np.tile(
+                        np.arange(
+                            startY
+                            + np.mod(i + j, 2) * self._islandOffset * hatchSpacing,
+                            endY + np.mod(i + j, 2) * self._islandOffset * hatchSpacing,
+                            hatchSpacing,
+                            dtype=np.float32,
+                        ).reshape(-1, 1),
+                        (2),
+                    ).flatten()
 
                     x = np.array([startX, endX])
                     x = np.resize(x, y.shape)
-                    z = np.arange(hatchOrder, hatchOrder + y.shape[0] / 2, 0.5).astype(np.int64)
+                    z = np.arange(hatchOrder, hatchOrder + y.shape[0] / 2, 0.5).astype(
+                        np.int64
+                    )
 
                 else:
-                    x = np.tile(np.arange(startX + np.mod(i + j, 2) * self._islandOffset * hatchSpacing,
-                                          endX + np.mod(i + j, 2) * self._islandOffset * hatchSpacing, hatchSpacing,
-                                          dtype=np.float32).reshape(-1, 1), (2)).flatten()
+                    x = np.tile(
+                        np.arange(
+                            startX
+                            + np.mod(i + j, 2) * self._islandOffset * hatchSpacing,
+                            endX + np.mod(i + j, 2) * self._islandOffset * hatchSpacing,
+                            hatchSpacing,
+                            dtype=np.float32,
+                        ).reshape(-1, 1),
+                        (2),
+                    ).flatten()
 
                     y = np.array([startY, endY])
                     y = np.resize(y, x.shape)
-                    z = np.arange(hatchOrder, hatchOrder + y.shape[0] / 2, 0.5).astype(np.int64)
+                    z = np.arange(hatchOrder, hatchOrder + y.shape[0] / 2, 0.5).astype(
+                        np.int64
+                    )
 
                 hatchOrder += x.shape[0] / 2
 
-                coords += [np.hstack([x.reshape(-1, 1),
-                                      y.reshape(-1, 1),
-                                      z.reshape(-1, 1)])]
+                coords += [
+                    np.hstack([x.reshape(-1, 1), y.reshape(-1, 1), z.reshape(-1, 1)])
+                ]
 
         coords = np.vstack(coords)
 
         # Create the rotation matrix
         c, s = np.cos(theta_h), np.sin(theta_h)
-        R = np.array([(c, -s, 0),
-                      (s, c, 0),
-                      (0, 0, 1.0)])
+        R = np.array([(c, -s, 0), (s, c, 0), (0, 0, 1.0)])
 
         # Apply the rotation matrix and translate to bounding box centre
         coords = np.matmul(R, coords.T)

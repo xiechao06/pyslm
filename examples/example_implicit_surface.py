@@ -25,9 +25,9 @@ ky = 8
 kz = 8
 
 """ Create the computational grid - note np operates with k(z) numerical indexing unlike the default matlab equivalent"""
-z, y, x = np.meshgrid(np.arange(0, Lz, res),
-                      np.arange(0, Ly, res),
-                      np.arange(0, Lx, res), indexing='ij')
+z, y, x = np.meshgrid(
+    np.arange(0, Lz, res), np.arange(0, Ly, res), np.arange(0, Lx, res), indexing="ij"
+)
 
 nz, ny, nx = x.shape
 
@@ -36,21 +36,23 @@ Calculating the Gyroid TPMS
 """
 T = 0.7
 
-U = ( np.cos(kx*2*np.pi*(x/Lx))*np.sin(ky*2*np.pi*(y/Ly))
-    + np.cos(ky*2*np.pi*(y/Ly))*np.sin(kz*2*np.pi*(z/Lz))
-    + np.cos(kz*2*np.pi*(z/Lz))*np.sin(kx*2*np.pi*(x/Lx)) )**2 - T**2
+U = (
+    np.cos(kx * 2 * np.pi * (x / Lx)) * np.sin(ky * 2 * np.pi * (y / Ly))
+    + np.cos(ky * 2 * np.pi * (y / Ly)) * np.sin(kz * 2 * np.pi * (z / Lz))
+    + np.cos(kz * 2 * np.pi * (z / Lz)) * np.sin(kx * 2 * np.pi * (x / Lx))
+) ** 2 - T**2
 
 """ Generate a sphere to fill the domain"""
-sphere_rad = Lx/2
-sphere = np.sqrt((x-Lx/2)**2 + (y-Ly/2)**2  + (z-Lz/2)**2) < sphere_rad
+sphere_rad = Lx / 2
+sphere = np.sqrt((x - Lx / 2) ** 2 + (y - Ly / 2) ** 2 + (z - Lz / 2) ** 2) < sphere_rad
 
 # Generate a narrow-band levelset
-#sphere = sphere * np.logical_and(sphere > sphere_rad -3, sphere < sphere_rad +3)
-#sphere = (sphere - sphere_rad) / 3
+# sphere = sphere * np.logical_and(sphere > sphere_rad -3, sphere < sphere_rad +3)
+# sphere = (sphere - sphere_rad) / 3
 
 """ Note plotting the image"""
 plt.figure()
-plt.imshow(sphere[int(nz/2)])
+plt.imshow(sphere[int(nz / 2)])
 
 """ Merge the space to create final implicit field representing a gyroid sphere and plot the field. The background
 space is set to >0 to isolate the lattice sphere. """
@@ -90,9 +92,11 @@ myHatcher = hatching.BasicIslandHatcher()
 myHatcher.stripeWidth = 5.0
 
 # Set the base hatching parameters which are generated within Hatcher
-myHatcher.hatchAngle = 10 # [°] The angle used for the islands
-myHatcher.volumeOffsetHatch = 0.08 # [mm] Offset between internal and external boundary
-myHatcher.spotCompensation = 0.06 # [mm] Additional offset to account for laser spot size
+myHatcher.hatchAngle = 10  # [°] The angle used for the islands
+myHatcher.volumeOffsetHatch = 0.08  # [mm] Offset between internal and external boundary
+myHatcher.spotCompensation = (
+    0.06  # [mm] Additional offset to account for laser spot size
+)
 myHatcher.numInnerContours = 2
 myHatcher.numOuterContours = 1
 myHatcher.hatchSortMethod = hatching.AlternateSort()
@@ -102,9 +106,9 @@ Perform the slicing. Return coords paths should be set so they are formatted int
 This is internally performed using Trimesh to obtain a closed set of polygons.
 The boundaries of the slice can be automatically simplified if desired. 
 """
-print('Hatching started')
+print("Hatching started")
 layer = myHatcher.hatch(contours)
-print('Hatching finished')
+print("Hatching finished")
 
 """
 Note the hatches are ordered sequentially across the stripe. Additional sorting may be required to ensure that the
@@ -133,8 +137,8 @@ for layerGeom in layer.geometry:
 
 bstyle = pyslm.geometry.BuildStyle()
 bstyle.bid = 1
-bstyle.laserSpeed = 200.0 # [mm/s]
-bstyle.laserPower = 200.0 # [W]
+bstyle.laserSpeed = 200.0  # [mm/s]
+bstyle.laserPower = 200.0  # [W]
 
 model = pyslm.geometry.Model()
 model.mid = 1
@@ -144,7 +148,9 @@ model.buildStyles.append(bstyle)
 Analyse the layers using the analysis module. The path distance and the estimate time taken to scan the layer can be
 predicted.
 """
-print('Total Path Distance: {:.1f} mm'.format(pyslm.analysis.getLayerPathLength(layer)))
-print('Total jump distance {:.1f} mm'.format(pyslm.analysis.getLayerJumpLength(layer)))
-print('Time taken {:.1f} s'.format(pyslm.analysis.getLayerTime(layer, [model])))
+print("Total Path Distance: {:.1f} mm".format(pyslm.analysis.getLayerPathLength(layer)))
+print("Total jump distance {:.1f} mm".format(pyslm.analysis.getLayerJumpLength(layer)))
+print("Time taken {:.1f} s".format(pyslm.analysis.getLayerTime(layer, [model])))
 
+
+plt.show()

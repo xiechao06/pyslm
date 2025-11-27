@@ -1,5 +1,6 @@
 """
 Support generation script - Shows how to generate basic block supports using PySLM
+This example uses BlockSupportGenerator to generate solid block supports.
 """
 
 import logging
@@ -7,9 +8,13 @@ import logging
 import numpy as np
 import trimesh
 import trimesh.creation
+import trimesh.exchange.gltf
+import trimesh.exchange.stl
 
 import pyslm.support
+import pyslm.visualise
 from pyslm.core import Part
+from pyslm.geometry import ContourGeometry, Layer
 
 """
 Uncomment the line below to provide debug messages for OpenGL - if issues arise.
@@ -27,13 +32,12 @@ Set the Geometry for the Example using a complicated topology optimised bracket 
 myPart = Part("myPart")
 # myPart.setGeometry("../models/bracket.stl", fixGeometry=True)
 myPart.setGeometry("../models/frameGuide.stl", fixGeometry=True)
-# myPart.scaleFactor = 4.0
+
 myPart.rotation = [
     62.0,
     50.0,
     -0.0,
-]  # [62.0, 50.0, -40.0] #[10, 70, 30] #[62.0, 50.0, -40.0]  #[-70.0, 50.0, -30.0] #[62.0, 50.0, -40.0]
-# myPart.rotation = [76,35,-13] #[-25,0,5] #[76,35,-13]#[62,50,-40.0]
+]
 
 myPart.scaleFactor = 1.0
 myPart.dropToPlatform(10)
@@ -55,11 +59,10 @@ overhangEdges = pyslm.support.BaseSupportGenerator.findOverhangEdges(myPart)
 """
 Generate block supports for the part.
 
-The GridBlockSupportGenerator class is initialised and the parameters below are specified as a reasonable starting
-defaults for the algorithm. The GridBlockSupport generator overrides the BlockSupportGenerator class and provides
-additional methods for generating a grid-truss structure from the support volume.
+The BlockSupportGenerator class is initialised and the parameters below are specified as a reasonable starting
+defaults for the algorithm. This generates solid block support volumes.
 """
-supportGenerator = pyslm.support.GridBlockSupportGenerator()
+supportGenerator = pyslm.support.BlockSupportGenerator()
 supportGenerator.rayProjectionResolution = (
     0.05  # [mm] - The resolution of the grid used for the ray projection
 )
@@ -78,41 +81,18 @@ supportGenerator.triangulationSpacing = (
 supportGenerator.minimumAreaThreshold = (
     0.1  # Minimum area threshold to not process support region'
 )
-supportGenerator.triangulationSpacing = (
-    4  # [mm^2] - Internal parameter used for generating the mesh of the volume
-)
-supportGenerator.supportBorderDistance = 1.0  # [mm]
-supportGenerator.numSkinMeshSubdivideIterations = 2
-
-# Support teeth parameters
-supportGenerator.useUpperSupportTeeth = False
-supportGenerator.useLowerSupportTeeth = False
-supportGenerator.supportWallThickness = 1.0  # [mm] - The thickness of the upper and support walls to strengthen teeth regions
-supportGenerator.supportTeethTopLength = (
-    0.1  # [mm] - The length of the tab for the support teeth
-)
-supportGenerator.supportTeethHeight = 1.5  # [mm] - Length of the support teeth
-supportGenerator.supportTeethBaseInterval = (
-    1.5  # [mm] - The interval between the support teeth
-)
-supportGenerator.supportTeethUpperPenetration = (
-    0.2  # [mm] - The penetration of the support teeth into the part
-)
 
 supportGenerator.splineSimplificationFactor = 10  # - Specify the smoothing factor using spline interpolation for the support boundaries
-supportGenerator.gridSpacing = [5, 5]  # [mm] The Grid
 
 """
-Generate a list of Grid Block Supports (trimesh objects currently). The contain the support volumes and other generated
+Generate a list of Block Supports (trimesh objects currently). The contain the support volumes and other generated
 information identified from the support surfaces identified on the part based on the choice of overhang angle.
 """
 supportBlockRegions = supportGenerator.identifySupportRegions(
     myPart, OVERHANG_ANGLE, True
 )
 
-for block in supportBlockRegions:
-    block.trussWidth = 1.0
-
+# Extract the solid support volumes
 blockSupports = [block.supportVolume for block in supportBlockRegions]
 
 """
@@ -161,7 +141,8 @@ Visualise all the support geometry
 """
 
 """ Identify the sides of the block extrudes """
-s1 = trimesh.Scene([myPart.geometry] + blockSupports)
+# s1 = trimesh.Scene([myPart.geometry] + blockSupports)
+s1 = trimesh.Scene(blockSupports)
 
 """
 The following section exports the group of support structures from the trimesh scene. 
@@ -170,82 +151,67 @@ The following section exports the group of support structures from the trimesh s
 with open("overhangSupport.glb", "wb") as f:
     f.write(trimesh.exchange.gltf.export_glb(s1, include_normals=True))
 
+with open("overhangSupport.stl", "wb") as f:
+    f.write(trimesh.exchange.stl.export_stl(s1))
+
 """
 Show only the volume block supports generated
 """
-DISPLAY_BLOCK_VOLUME = False
+DISPLAY_BLOCK_VOLUME = True
 
 if DISPLAY_BLOCK_VOLUME:
-    s2 = trimesh.Scene([myPart.geometry, overhangMesh, blockSupports])
+    s2 = trimesh.Scene([myPart.geometry, overhangMesh] + blockSupports)
     s2.show()
 
 """
-The following section generates the grid-truss structure by calling the geometry method. As a summary, the process 
-takes a multiple cross-sections across the support volume and extracts the faces of the volume boundary projected onto
-an equivalent 2D area. Within the 2D regions a series of lines are offset and intersected to produce a grid structure.
-The polygon is converted to a triangular mesh and the boundary truss is mapped back onto the original 3D boundary.
+The final section demonstrates slicing across the support structure previously generated.
+Since we are using solid block supports, we slice them to get the boundary contours.
 """
 
-meshSupports = []
+# Slice at a specific Z height
+z_height = 10.0
 
-for supportBlock in supportBlockRegions:
-    supportBlock.mergeMesh = False
-    supportBlock.useSupportSkin = True
-    meshSupports.append(supportBlock.geometry())
+# Slice the support blocks
+support_sections = []
+for block in blockSupports:
+    section = block.section(plane_origin=[0, 0, z_height], plane_normal=[0, 0, 1])
+    if section is not None:
+        support_sections.append(section)
 
-s2 = trimesh.Scene(
-    [
-        overhangMesh,
-        myPart.geometry,
-    ]
-    + meshSupports
+# Also slice the part for context
+part_section = myPart.geometry.section(
+    plane_origin=[0, 0, z_height], plane_normal=[0, 0, 1]
 )
 
-s2.show()
+# Visualize the sections
+if support_sections:
+    s3 = trimesh.Scene([part_section] + support_sections)
+    print(f"Displaying cross-section at Z={z_height}")
+    s3.show()
 
-isectMesh += blockSupportSides
-
-isectMesh = blockSupportMesh + myPart.geometry
-"""
-The final section merges all the geometry and demonstrates slicing across the support structure previously generated.
-"""
-
-# Care must be taken to ensure matplotlib is loaded after the support generation using vispy
-
-import pyslm.visualise
-from pyslm.geometry import ContourGeometry, Layer
-
-innerHatchPaths, boundaryPaths = pyslm.support.GridBlockSupport.slice(meshSupports, 0.5)
-
+# Example of converting to PySLM Layer for hatching (if desired)
 layer = Layer()
-gridCoords = pyslm.hatching.simplifyBoundaries(innerHatchPaths, 0.1)
+transformMat = np.eye(4)
 
-for coords in gridCoords:
-    layerGeom = ContourGeometry()
-    layerGeom.coords = coords.reshape(-1, 2)
-    layer.geometry.append(layerGeom)
+for section in support_sections:
+    # Convert to planar
+    planarSection, transform = section.to_planar(transformMat)
 
-boundarCoords = pyslm.hatching.simplifyBoundaries(boundaryPaths, 0.1)
+    # Extract polygons from the planar section
+    for poly in planarSection.polygons_full:
+        # Convert shapely polygon to coordinates
+        if poly.exterior:
+            coords = np.array(poly.exterior.coords)
+            layerGeom = ContourGeometry()
+            layerGeom.coords = coords
+            layer.geometry.append(layerGeom)
 
-for coords in boundarCoords:
-    layerGeom = ContourGeometry()
-    layerGeom.coords = coords.reshape(-1, 2)
-    layer.geometry.append(layerGeom)
+        for interior in poly.interiors:
+            coords = np.array(interior.coords)
+            layerGeom = ContourGeometry()
+            layerGeom.coords = coords
+            layer.geometry.append(layerGeom)
 
-pyslm.visualise.plotSequential(layer, plotJumps=True, plotArrows=False)
-
-# Obtain the 2D Planar Section at this Z-position
-sections = isectMesh.section(plane_origin=[0.0, 0, 10.0], plane_normal=[0, 0, 1])
-blockSupportMesh
-transformMat = np.array(
-    (
-        [1.0, 0.0, 0.0, 0.0],
-        [0.0, 1.0, 0.0, 0.0],
-        [0.0, 0.0, 1.0, 0.0],
-        [0.0, 0.0, 0.0, 1.0],
-    ),
-    dtype=np.float32,
-)
-
-planarSection, transform = sections.to_planar(transformMat, normal=[1, 0, 0])
-sections.show()
+if len(layer.geometry) > 0:
+    print("Plotting 2D layer of supports...")
+    pyslm.visualise.plotSequential(layer, plotJumps=True, plotArrows=False)

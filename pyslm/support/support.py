@@ -10,7 +10,9 @@ except BaseException as E:
 try:
     import mapbox_earcut
 except BaseException as E:
-    raise BaseException("Mapbox earcut is required to use the support.geometry submodule")
+    raise BaseException(
+        "Mapbox earcut is required to use the support.geometry submodule"
+    )
 
 try:
     import vispy
@@ -55,26 +57,28 @@ class SupportStructure(abc.ABC):
     the support object or part (:attr:`supportObject`) and if the support self-intersects with
     the part (:attr:`supportObject`).
     """
-    def __init__(self,
-                 supportObject: Part = None,
-                 supportVolume: trimesh.Trimesh = None,
-                 supportSurface: trimesh.Trimesh = None,
-                 intersectsPart: bool = False):
 
+    def __init__(
+        self,
+        supportObject: Part = None,
+        supportVolume: trimesh.Trimesh = None,
+        supportSurface: trimesh.Trimesh = None,
+        intersectsPart: bool = False,
+    ):
         self._supportVolume = supportVolume
         self._supportObject = supportObject
         self._supportSurface = supportSurface
         self._intersectsPart = intersectsPart
 
     def __str__(self):
-        return 'SupportStructure'
+        return "SupportStructure"
 
     @abc.abstractmethod
     def geometry(self) -> trimesh.Trimesh:
         """
         Returns the geometry representing the support structure
         """
-        raise NotImplementedError('Geometry property is an abstract method')
+        raise NotImplementedError("Geometry property is an abstract method")
 
     @staticmethod
     def flattenSupportRegion(region):
@@ -96,9 +100,11 @@ class SupportStructure(abc.ABC):
         flattenPath, polygonTransform = poly.to_planar()
         flattenPath.process()
 
-        flattenPath.apply_translation(polygonTransform[:2, 3])  # np.array([polygonTransform[0, 3],
+        flattenPath.apply_translation(
+            polygonTransform[:2, 3]
+        )  # np.array([polygonTransform[0, 3],
 
-        #flattenPath = flattenPath.simplify_spline(smooth=1000)
+        # flattenPath = flattenPath.simplify_spline(smooth=1000)
         polygon = flattenPath.polygons_full[0]
 
         return polygon
@@ -109,7 +115,7 @@ class SupportStructure(abc.ABC):
         """
         Returns the  volume of the Support Geometry
         """
-        raise NotImplementedError('Support Volume property is an abstract method')
+        raise NotImplementedError("Support Volume property is an abstract method")
 
     def projectedSupportArea(self) -> float:
         """
@@ -133,16 +139,16 @@ class SupportStructure(abc.ABC):
 
     @property
     def intersectsPart(self) -> bool:
-        """ Indicates the projected support structure intersect with the originating part """
+        """Indicates the projected support structure intersect with the originating part"""
         return self._intersectsPart
 
     @intersectsPart.setter
-    def intersectsPart(self, state : bool):
+    def intersectsPart(self, state: bool):
         self._intersectsPart = state
 
     @property
     def supportSurface(self) -> trimesh.Trimesh:
-        """ The support surface identified on the originating part """
+        """The support surface identified on the originating part"""
         return self._supportSurface
 
     @supportSurface.setter
@@ -151,7 +157,7 @@ class SupportStructure(abc.ABC):
 
     @property
     def supportObject(self) -> Any:
-        """ The originating object that the support structure is generated for """
+        """The originating object that the support structure is generated for"""
         return self._supportObject
 
     @supportObject.setter
@@ -174,16 +180,17 @@ class BlockSupportBase(SupportStructure):
     abstract method :meth:`SupportStructure.geometry`.
     """
 
-    def __init__(self,
-                 supportObject: Part = None,
-                 supportVolume: trimesh.Trimesh = None,
-                 supportSurface: trimesh.Trimesh = None,
-                 intersectsPart: bool = False):
-
+    def __init__(
+        self,
+        supportObject: Part = None,
+        supportVolume: trimesh.Trimesh = None,
+        supportSurface: trimesh.Trimesh = None,
+        intersectsPart: bool = False,
+    ):
         super().__init__(supportObject, supportVolume, supportSurface, intersectsPart)
 
     def __str__(self):
-        return 'BlockSupportBase'
+        return "BlockSupportBase"
 
     def geometry(self) -> trimesh.Trimesh:
         """
@@ -193,7 +200,7 @@ class BlockSupportBase(SupportStructure):
 
     @property
     def volume(self) -> float:
-        """ The calculated volume of the support volume region. """
+        """The calculated volume of the support volume region."""
         return self._supportVolume.volume
 
     @property
@@ -223,7 +230,7 @@ class BlockSupportBase(SupportStructure):
         blockSupportSides = self._supportVolume.copy()
         sin_theta = getFaceZProjectionWeight(blockSupportSides)
 
-        blockSupportSides.update_faces(sin_theta > (1.0-1e-4))
+        blockSupportSides.update_faces(sin_theta > (1.0 - 1e-4))
         blockSupportSides.remove_unreferenced_vertices()
 
         return blockSupportSides
@@ -251,7 +258,7 @@ class BlockSupportBase(SupportStructure):
 
             v = np.insert(v, 2, values=0.0, axis=1)
             sec = trimesh.Trimesh(vertices=v, faces=f)
-            sec.apply_transform(section.metadata['to_3D'])
+            sec.apply_transform(section.metadata["to_3D"])
             sectionMesh += sec
 
         return sectionMesh
@@ -283,7 +290,7 @@ class BaseSupportGenerator(abc.ABC):
         pass
 
     def __str__(self):
-        return 'BaseSupportGenerator'
+        return "BaseSupportGenerator"
 
     @staticmethod
     def findOverhangPoints(part: Part) -> np.ndarray:
@@ -298,7 +305,6 @@ class BaseSupportGenerator(abc.ABC):
 
         pointOverhangs = []
         for i in range(len(vAdjacency)):
-
             # Find the edge deltas between the points
             v = meshVerts[i]
             neighborVerts = meshVerts[vAdjacency[i], :]
@@ -314,7 +320,6 @@ class BaseSupportGenerator(abc.ABC):
             not have underlying connectivity. There are two cases that exist: on upwards or downwards pointing surface.
             """
             if np.all(delta[:, 2] > -BaseSupportGenerator.POINT_OVERHANG_TOLERANCE):
-
                 # Check that the vertex normal is pointing downwards (-ve Z) showing that the no material is underneath
                 if part.geometry.vertex_normals[i][2] < 0.0:
                     pointOverhangs.append(i)
@@ -322,9 +327,11 @@ class BaseSupportGenerator(abc.ABC):
         return pointOverhangs
 
     @staticmethod
-    def findOverhangEdges(part: Part,
-                          overhangAngle: Optional[float] = 45.0,
-                          edgeOverhangAngle: Optional[float] = 10.0):
+    def findOverhangEdges(
+        part: Part,
+        overhangAngle: Optional[float] = 45.0,
+        edgeOverhangAngle: Optional[float] = 10.0,
+    ):
         """
         Identifies edges which requires additional support based on both the support surface and support edge angle.
 
@@ -342,13 +349,12 @@ class BaseSupportGenerator(abc.ABC):
         """
         Calculate the face angles with respect to the +z vector  and the inter-face angles
         """
-        theta = getSupportAngles(part, np.array([[0., 0., 1.0]]))
+        theta = getSupportAngles(part, np.array([[0.0, 0.0, 1.0]]))
         adjacentFaceAngles = np.rad2deg(mesh.face_adjacency_angles)
 
         overhangEdges = []
         # Iterate through all the edges in the model
         for i in range(len(edgeVerts)):
-
             """
             Calculate the 'vertical' angle of the edge pointing in the z-direction by using the z component.
             First calculate vector, magnitude and the vertical angle of the vector
@@ -361,7 +367,6 @@ class BaseSupportGenerator(abc.ABC):
             # Identify if the vertical angle of the edge is less than the edgeOverhangAngle irrespective of the actual
             # direction of the vector (bidirectional)
             if np.abs(ang) < edgeOverhangAngle:
-
                 """
                 Locate the adjacent faces in the model using the face-adjacency property to identify if the edge
                 belongs to a sharp corner which tends to be susceptible areas. This is done by calculating the angle
@@ -369,7 +374,9 @@ class BaseSupportGenerator(abc.ABC):
                 """
                 adjacentFaces = mesh.face_adjacency[i]
 
-                if adjacentFaceAngles[i] > overhangAngle and np.all(theta[adjacentFaces] > 89):
+                if adjacentFaceAngles[i] > overhangAngle and np.all(
+                    theta[adjacentFaces] > 89
+                ):
                     overhangEdges.append(edges[i])
 
         return overhangEdges
@@ -425,17 +432,18 @@ class BlockSupportGenerator(BaseSupportGenerator):
     """
 
     def __init__(self):
-
         super().__init__()
 
         self._minimumAreaThreshold = 5.0  # mm2 (default = 10)
         self._rayProjectionResolution = 0.2  # mm (default = 0.5)
 
-        self._lowerProjectionOffset = 0.05 # mm
-        self._upperProjectionOffset = 0.05 # mm
+        self._lowerProjectionOffset = 0.05  # mm
+        self._upperProjectionOffset = 0.05  # mm
 
         self._innerSupportEdgeGap = 0.2  # mm (default = 0.1)
-        self._outerSupportEdgeGap = 0.5  # mm  - offset between part supports and baseplate supports
+        self._outerSupportEdgeGap = (
+            0.5  # mm  - offset between part supports and baseplate supports
+        )
 
         self._triangulationSpacing = 2  # mm (default = 1)
         self._simplifyPolygonFactor = 0.5
@@ -446,7 +454,7 @@ class BlockSupportGenerator(BaseSupportGenerator):
         self._splineSimplificationFactor = 20.0
 
     def __str__(self):
-        return 'BlockSupportGenerator'
+        return "BlockSupportGenerator"
 
     @staticmethod
     def gradThreshold(rayProjectionDistance: float, overhangAngle: float) -> float:
@@ -475,7 +483,7 @@ class BlockSupportGenerator(BaseSupportGenerator):
 
     @property
     def overhangAngle(self) -> float:
-        """ The overhang angle (degrees) used for identifying support surfaces on the :class:`Part` """
+        """The overhang angle (degrees) used for identifying support surfaces on the :class:`Part`"""
         return self._overhangAngle
 
     @overhangAngle.setter
@@ -509,7 +517,7 @@ class BlockSupportGenerator(BaseSupportGenerator):
 
     @property
     def outerSupportEdgeGap(self) -> float:
-        """ The offset applied to the  projected boundary of the support volume."""
+        """The offset applied to the  projected boundary of the support volume."""
         return self._outerSupportEdgeGap
 
     @outerSupportEdgeGap.setter
@@ -555,7 +563,7 @@ class BlockSupportGenerator(BaseSupportGenerator):
 
     @property
     def triangulationSpacing(self) -> float:
-        """ The spacing factor used whilst triangulating the support polygon region."""
+        """The spacing factor used whilst triangulating the support polygon region."""
         return self._triangulationSpacing
 
     @triangulationSpacing.setter
@@ -582,17 +590,20 @@ class BlockSupportGenerator(BaseSupportGenerator):
         self._rayProjectionResolution = resolution
 
     def filterSupportRegion(self, region):
-        """ Not implemented """
-        raise NotImplementedError('Not Implemented')
+        """Not implemented"""
+        raise NotImplementedError("Not Implemented")
 
     def generateIntersectionHeightMap(self):
-        """ Not implemented """
-        raise NotImplementedError('Not Implemented')
+        """Not implemented"""
+        raise NotImplementedError("Not Implemented")
 
-    def _identifySelfIntersectionHeightMap(self, subregion: trimesh.Trimesh,
-                                           offsetPoly: trimesh.path.Path2D,
-                                           cutMesh: trimesh.Trimesh,
-                                           bbox: np.ndarray) -> Tuple[np.ndarray]:
+    def _identifySelfIntersectionHeightMap(
+        self,
+        subregion: trimesh.Trimesh,
+        offsetPoly: trimesh.path.Path2D,
+        cutMesh: trimesh.Trimesh,
+        bbox: np.ndarray,
+    ) -> Tuple[np.ndarray]:
         """
         Generates the height map of the upper and lower depths. This is done by projecting rays at a resolution
         (attr:`~BlockSupportGenerator.rayProjectionResolution`) across the entire polygon region (offsetPoly) in both
@@ -605,17 +616,21 @@ class BlockSupportGenerator(BaseSupportGenerator):
         :return: A tuple containing various height maps
         """
 
-        logging.info('\tGenerated support height map (OpenGL Version)')
+        logging.info("\tGenerated support height map (OpenGL Version)")
 
         # Extend the bounding box extents in the Z direction
         bboxCpy = bbox.copy()
-        bboxCpy[0,2] -= 1
-        bboxCpy[1,2] += 1
+        bboxCpy[0, 2] -= 1
+        bboxCpy[1, 2] += 1
 
-        upperImg = render.projectHeightMap(subregion, self.rayProjectionResolution, False, bboxCpy)
+        upperImg = render.projectHeightMap(
+            subregion, self.rayProjectionResolution, False, bboxCpy
+        )
 
         # Cut mesh is lower surface
-        lowerImg = render.projectHeightMap(cutMesh, self.rayProjectionResolution, True, bboxCpy)
+        lowerImg = render.projectHeightMap(
+            cutMesh, self.rayProjectionResolution, True, bboxCpy
+        )
         lowerImg = np.flipud(lowerImg)
 
         # Generate the difference between upper and lower ray-traced intersections
@@ -625,9 +640,12 @@ class BlockSupportGenerator(BaseSupportGenerator):
 
         return heightMap2.T, upperImg, lowerImg
 
-    def _identifySelfIntersectionHeightMapRayTracing(self, subregion: trimesh.Trimesh,
-                                                     offsetPoly: trimesh.path.Path2D,
-                                                     cutMesh: trimesh.Trimesh) -> Tuple[np.ndarray]:
+    def _identifySelfIntersectionHeightMapRayTracing(
+        self,
+        subregion: trimesh.Trimesh,
+        offsetPoly: trimesh.path.Path2D,
+        cutMesh: trimesh.Trimesh,
+    ) -> Tuple[np.ndarray]:
         """
         Deprecated: Generates the height map of the upper and lower depths. This is done by projecting rays at a resolution
         (attr:`~BlockSupportGenerator.rayProjectionResolution`) across the entire polygon region (offsetPoly) in both
@@ -641,27 +659,37 @@ class BlockSupportGenerator(BaseSupportGenerator):
         """
 
         # Rasterise the surface of overhang to generate projection points
-        supportArea = np.array(offsetPoly.rasterize(self.rayProjectionResolution, offsetPoly.bounds[0, :])).T
+        supportArea = np.array(
+            offsetPoly.rasterize(self.rayProjectionResolution, offsetPoly.bounds[0, :])
+        ).T
 
-        coords = np.argwhere(supportArea).astype(np.float32) * self.rayProjectionResolution
-        coords += offsetPoly.bounds[0, :] + 1e-5  # An offset is required due to rounding error
+        coords = (
+            np.argwhere(supportArea).astype(np.float32) * self.rayProjectionResolution
+        )
+        coords += (
+            offsetPoly.bounds[0, :] + 1e-5
+        )  # An offset is required due to rounding error
 
-        logging.warning('Depreceated function')
-        logging.info('\t - start projecting rays')
-        logging.info('\t - number of rays with resolution ({:.3f}): {:d}'.format(self.rayProjectionResolution, len(coords)))
+        logging.warning("Depreceated function")
+        logging.info("\t - start projecting rays")
+        logging.info(
+            "\t - number of rays with resolution ({:.3f}): {:d}".format(
+                self.rayProjectionResolution, len(coords)
+            )
+        )
 
         """
         Project upwards to intersect with the upper surface
         """
         # Set the z-coordinates for the ray origin
         coords = np.insert(coords, 2, values=-1e5, axis=1)
-        rays = np.repeat([[0., 0., 1.]], coords.shape[0], axis=0)
+        rays = np.repeat([[0.0, 0.0, 1.0]], coords.shape[0], axis=0)
 
         # Find the first location of any triangles which intersect with the part
-        hitLoc, index_ray, index_tri = subregion.ray.intersects_location(ray_origins=coords,
-                                                                         ray_directions=rays,
-                                                                         multiple_hits=False)
-        logging.info('\t - finished projecting rays')
+        hitLoc, index_ray, index_tri = subregion.ray.intersects_location(
+            ray_origins=coords, ray_directions=rays, multiple_hits=False
+        )
+        logging.info("\t - finished projecting rays")
 
         coords2 = coords.copy()
 
@@ -670,11 +698,11 @@ class BlockSupportGenerator(BaseSupportGenerator):
 
         # If any verteces in triangle there is an intersection
         # Find the first location of any triangles which intersect with the part
-        hitLoc2, index_ray2, index_tri2 = cutMesh.ray.intersects_location(ray_origins=coords2,
-                                                                          ray_directions=rays,
-                                                                          multiple_hits=False)
+        hitLoc2, index_ray2, index_tri2 = cutMesh.ray.intersects_location(
+            ray_origins=coords2, ray_directions=rays, multiple_hits=False
+        )
 
-        logging.info('\t - finished projecting rays')
+        logging.info("\t - finished projecting rays")
 
         # Create a height map of the projection rays
         heightMap = np.ones(supportArea.shape) * -1.0
@@ -691,7 +719,7 @@ class BlockSupportGenerator(BaseSupportGenerator):
 
             # Assign the heights
             heightMap[hitLocIdx[:, 0], hitLocIdx[:, 1]] = hitLoc[:, 2]
-            heightMapUpper[hitLocIdx[:, 0], hitLocIdx[:, 1]] = hitLoc[:,2]
+            heightMapUpper[hitLocIdx[:, 0], hitLocIdx[:, 1]] = hitLoc[:, 2]
 
         if len(hitLoc2) > 0:
             hitLocCpy2 = hitLoc2.copy()
@@ -703,13 +731,16 @@ class BlockSupportGenerator(BaseSupportGenerator):
             heightMap[hitLocIdx2[:, 0], hitLocIdx2[:, 1]] = hitLoc2[:, 2]
             heightMapLower[hitLocIdx2[:, 0], hitLocIdx2[:, 1]] = hitLoc2[:, 2]
 
-        logging.info('\tgenerated support height map')
+        logging.info("\tgenerated support height map")
 
         return heightMap, heightMapUpper, heightMapLower
 
-
-    def identifySupportRegions(self, part: Part, overhangAngle: float,
-                               findSelfIntersectingSupport: Optional[bool] = True) -> List[BlockSupportBase]:
+    def identifySupportRegions(
+        self,
+        part: Part,
+        overhangAngle: float,
+        findSelfIntersectingSupport: Optional[bool] = True,
+    ) -> List[BlockSupportBase]:
         """
         Extracts the overhang mesh and generates block regions given a part and target overhang angle. The algorithm
         uses a combination of boolean operations and ray intersection/projection to discriminate support regions.
@@ -734,35 +765,39 @@ class BlockSupportGenerator(BaseSupportGenerator):
 
         """ Process sub-regions"""
         for subregion in overhangSubregions:
-
-            logging.info('Processing subregion')
+            logging.info("Processing subregion")
             try:
                 polygon = SupportStructure.flattenSupportRegion(subregion)
             except:
-                logging.warning('PySLM: Could not flatten region')
+                logging.warning("PySLM: Could not flatten region")
                 continue
 
-            #mergedPoly = trimesh.load_path(outline)
-            #mergedPoly.merge_vertices(1)
-            #mergedPoly = mergedPoly.simplify_spline(self._splineSimplificationFactor)
+            # mergedPoly = trimesh.load_path(outline)
+            # mergedPoly.merge_vertices(1)
+            # mergedPoly = mergedPoly.simplify_spline(self._splineSimplificationFactor)
 
             # Simplify the polygon to ease simplify extrusion and offset in 2D the support region projection
-            offsetShape = polygon.simplify(self.simplifyPolygonFactor, preserve_topology=False).buffer(-self.outerSupportEdgeGap)
+            offsetShape = polygon.simplify(
+                self.simplifyPolygonFactor, preserve_topology=False
+            ).buffer(-self.outerSupportEdgeGap)
 
             if offsetShape is None or offsetShape.area < self.minimumAreaThreshold:
-                logging.info('\t - Note: skipping shape (area too small)')
+                logging.info("\t - Note: skipping shape (area too small)")
                 continue
 
             if isinstance(offsetShape, shapely.geometry.MultiPolygon):
                 offsetPolyList = []
                 for poly in offsetShape.geoms:
-                    triPath = trimesh.load_path(poly, process=False)#.simplify_spline(self._splineSimplificationFactor)
+                    triPath = trimesh.load_path(
+                        poly, process=False
+                    )  # .simplify_spline(self._splineSimplificationFactor)
                     if triPath.is_closed and triPath.area > self.minimumAreaThreshold:
-
                         offsetPolyList.append(triPath)
 
                 if not offsetPolyList:
-                    logging.info('\t - Note: skipping shape - no valid regions identified')
+                    logging.info(
+                        "\t - Note: skipping shape - no valid regions identified"
+                    )
                     continue
 
                 offsetPolys = offsetPolyList[0]
@@ -771,36 +806,45 @@ class BlockSupportGenerator(BaseSupportGenerator):
                     offsetPoly += poly
 
             else:
-                offsetPoly = trimesh.load_path(offsetShape)#.simplify_spline(self._splineSimplificationFactor)
+                offsetPoly = trimesh.load_path(
+                    offsetShape
+                )  # .simplify_spline(self._splineSimplificationFactor)
 
             """
             Create an extrusion at the vertical extent of the part and perform self-intersection test
             """
-            extruMesh2Flat = subregion.copy();
-            extruMesh2Flat.vertices[:,2] = 0.0
+            extruMesh2Flat = subregion.copy()
+            extruMesh2Flat.vertices[:, 2] = 0.0
 
-            extruMesh2 = trimesh.creation.extrude_triangulation(extruMesh2Flat.vertices[:,:2], extruMesh2Flat.faces, 100)
+            extruMesh2 = trimesh.creation.extrude_triangulation(
+                extruMesh2Flat.vertices[:, :2], extruMesh2Flat.faces, 100
+            )
 
             # Position the upper-surface of the mesh just below the upper surface (1e-2) to avoid self-intersection
-            eMesh2Idx = extruMesh2.vertices[:,2] > 1.0
-            extruMesh2.vertices[eMesh2Idx,2] = subregion.vertices[:,2] - 0.01
+            eMesh2Idx = extruMesh2.vertices[:, 2] > 1.0
+            extruMesh2.vertices[eMesh2Idx, 2] = subregion.vertices[:, 2] - 0.01
             extruMesh = extruMesh2
-            #extruMesh = extrudeFace(subregion, 0.0)
-            #extruMesh.vertices[:, 2] = extruMesh.vertices[:, 2] - 0.01
+            # extruMesh = extrudeFace(subregion, 0.0)
+            # extruMesh.vertices[:, 2] = extruMesh.vertices[:, 2] - 0.01
 
             timeIntersect = time.time()
 
-            logging.info('\t - start intersecting mesh')
+            logging.info("\t - start intersecting mesh")
 
             bbox = extruMesh.bounds
             cutMesh = boolIntersect(part.geometry, extruMesh)
-            logging.info('\t\t - Mesh intersection time using manifold: {:.3f}s'.format(time.time() - timeIntersect))
-            logging.info('\t -  Finished intersecting mesh')
+            logging.info(
+                "\t\t - Mesh intersection time using manifold: {:.3f}s".format(
+                    time.time() - timeIntersect
+                )
+            )
+            logging.info("\t -  Finished intersecting mesh")
             totalBooleanTime += time.time() - timeIntersect
 
             # Note this a hard tolerance
-            if cutMesh.volume < BlockSupportGenerator._intersectionVolumeTolerance: # 50
-
+            if (
+                cutMesh.volume < BlockSupportGenerator._intersectionVolumeTolerance
+            ):  # 50
                 if self._useApproxBasePlateSupport:
                     """
                     Create a support structure that extends to the base plate (z=0)
@@ -808,14 +852,16 @@ class BlockSupportGenerator(BaseSupportGenerator):
                     NOTE - not currently used - edge smoothing cannot be performed despite this being a
                     quicker methods, it suffer sever quality issues with jagged edges so should be avoided.
                     """
-                    logging.info('Creating Approximate Base-Plate Support')
+                    logging.info("Creating Approximate Base-Plate Support")
 
                     extruMesh.visual.face_colors[:, :3] = np.random.randint(254, size=3)
 
                     # Create a support block object
-                    baseSupportBlock = BlockSupportBase(supportObject=part,
-                                                        supportVolume=extruMesh,
-                                                        supportSurface=subregion)
+                    baseSupportBlock = BlockSupportBase(
+                        supportObject=part,
+                        supportVolume=extruMesh,
+                        supportSurface=subregion,
+                    )
 
                     supportBlockRegions.append(baseSupportBlock)
 
@@ -823,7 +869,7 @@ class BlockSupportGenerator(BaseSupportGenerator):
             elif not findSelfIntersectingSupport:
                 continue
 
-            v0 = np.array([[0., 0., 1.0]])
+            v0 = np.array([[0.0, 0.0, 1.0]])
 
             # Identify Support Angles
             v1 = cutMesh.face_normals
@@ -840,29 +886,45 @@ class BlockSupportGenerator(BaseSupportGenerator):
             # Use a ray-tracing approach to identify self-intersections. This provides a method to isolate regions that
             # either are self-intersecting or not.
 
-            logging.info('\t - start generated support height map')
-            heightMap, heightMapUpper, heightMapLower = self._identifySelfIntersectionHeightMap(subregion, offsetPoly, cutMeshUpper, bbox)
-            logging.info('\t - finished generated support height map')
+            logging.info("\t - start generated support height map")
+            heightMap, heightMapUpper, heightMapLower = (
+                self._identifySelfIntersectionHeightMap(
+                    subregion, offsetPoly, cutMeshUpper, bbox
+                )
+            )
+            logging.info("\t - finished generated support height map")
 
-            heightMap = np.pad(heightMap, ((2, 2), (2,2)), 'constant', constant_values=((1, 1), (1,1)))
+            heightMap = np.pad(
+                heightMap,
+                ((2, 2), (2, 2)),
+                "constant",
+                constant_values=((1, 1), (1, 1)),
+            )
 
             vx, vy = np.gradient(heightMap)
-            grads = np.sqrt(vx ** 2 + vy ** 2)
+            grads = np.sqrt(vx**2 + vy**2)
 
-            grads = scipy.ndimage.filters.gaussian_filter(grads, sigma=BlockSupportGenerator._gaussian_blur_sigma)
+            grads = scipy.ndimage.filters.gaussian_filter(
+                grads, sigma=BlockSupportGenerator._gaussian_blur_sigma
+            )
 
             """
             Find the outlines of any regions of the height map which deviate significantly
             This is used to separate both self-intersecting supports and those which are simply connected
             to the base-plate.
             """
-            outlines = find_contours(grads, self.gradThreshold(self.rayProjectionResolution, self.overhangAngle),
-                                     mask=heightMap > 2)
+            outlines = find_contours(
+                grads,
+                self.gradThreshold(self.rayProjectionResolution, self.overhangAngle),
+                mask=heightMap > 2,
+            )
 
             # Transform the outlines from image to global coordinates system
             outlinesTrans = []
             for outline in outlines:
-                outlinesTrans.append(outline * self.rayProjectionResolution + bbox[0, :2])
+                outlinesTrans.append(
+                    outline * self.rayProjectionResolution + bbox[0, :2]
+                )
 
             # Convert outlines into closed polygons
             outlinePolygons = utils.pathsToClosedPolygons(outlinesTrans)
@@ -871,7 +933,6 @@ class BlockSupportGenerator(BaseSupportGenerator):
 
             # Process the outlines found from the contours
             for outline in outlinePolygons:
-
                 """
                 Process the outline by finding the boundaries
                 """
@@ -883,22 +944,33 @@ class BlockSupportGenerator(BaseSupportGenerator):
                 mergedPoly.merge_vertices(4)
 
                 if self._splineSimplificationFactor is not None:
-                    mergedPoly = mergedPoly.simplify_spline(self._splineSimplificationFactor)
+                    mergedPoly = mergedPoly.simplify_spline(
+                        self._splineSimplificationFactor
+                    )
 
                 try:
                     outPolygons = mergedPoly.polygons_full
                 except:
                     import pyslm.visualise
-                    pyslm.visualise.plotPolygon(outline)
-                    raise Exception('Incompatible Shapely version used or other issue detected - please submit a bug report')
 
-                if not mergedPoly.is_closed or len(outPolygons) == 0 or outPolygons[0] is None:
+                    pyslm.visualise.plotPolygon(outline)
+                    raise Exception(
+                        "Incompatible Shapely version used or other issue detected - please submit a bug report"
+                    )
+
+                if (
+                    not mergedPoly.is_closed
+                    or len(outPolygons) == 0
+                    or outPolygons[0] is None
+                ):
                     continue
 
                 if len(outPolygons) > 1:
-                    raise Exception('Multi-polygons - error please submit a bug report')
+                    raise Exception("Multi-polygons - error please submit a bug report")
 
-                bufferPolyA = mergedPoly.polygons_full[0].simplify(self.simplifyPolygonFactor*self.rayProjectionResolution)
+                bufferPolyA = mergedPoly.polygons_full[0].simplify(
+                    self.simplifyPolygonFactor * self.rayProjectionResolution
+                )
 
                 bufferPoly = bufferPolyA.buffer(-self.innerSupportEdgeGap)
 
@@ -908,28 +980,29 @@ class BlockSupportGenerator(BaseSupportGenerator):
                     polygons.append(bufferPoly)
 
             for bufferPoly in polygons:
-
                 if bufferPoly.area < self.minimumAreaThreshold:
                     continue
 
                 """
                 Triangulate the polygon into a planar mesh
                 """
-                poly_tri = trimesh.creation.triangulate_polygon(bufferPoly,
-                                                                triangle_args='pa{:.3f}'.format(self.triangulationSpacing),
-                                                                engine='triangle')
+                poly_tri = trimesh.creation.triangulate_polygon(
+                    bufferPoly,
+                    triangle_args="pa{:.3f}".format(self.triangulationSpacing),
+                    engine="triangle",
+                )
 
                 """
                 Project upwards to intersect with the upper surface
                 Project the vertices downward (-z) to intersect with the cutMesh
                 """
                 coords = np.insert(poly_tri[0], 2, values=-1e-7, axis=1)
-                ray_dir = np.repeat([[0., 0., 1.]], coords.shape[0], axis=0)
+                ray_dir = np.repeat([[0.0, 0.0, 1.0]], coords.shape[0], axis=0)
 
                 # Find the first location of any triangles which intersect with the part
-                hitLoc, index_ray, index_tri = subregion.ray.intersects_location(ray_origins=coords,
-                                                                                 ray_directions=ray_dir,
-                                                                                 multiple_hits=False)
+                hitLoc, index_ray, index_tri = subregion.ray.intersects_location(
+                    ray_origins=coords, ray_directions=ray_dir, multiple_hits=False
+                )
 
                 coords2 = coords.copy()
                 coords2[index_ray, 2] = hitLoc[:, 2] + self.upperProjectionOffset
@@ -941,13 +1014,16 @@ class BlockSupportGenerator(BaseSupportGenerator):
                 """
 
                 coords3 = coords2.copy()
-                coords3[:,2] = 0.0
+                coords3[:, 2] = 0.0
 
                 if cutMesh.volume > BlockSupportGenerator._intersectionVolumeTolerance:
-
-                    hitLoc2, index_ray2, index_tri2 = cutMeshUpper.ray.intersects_location(ray_origins=coords2,
-                                                                                           ray_directions=ray_dir,
-                                                                                           multiple_hits=False)
+                    hitLoc2, index_ray2, index_tri2 = (
+                        cutMeshUpper.ray.intersects_location(
+                            ray_origins=coords2,
+                            ray_directions=ray_dir,
+                            multiple_hits=False,
+                        )
+                    )
                 else:
                     # The region was not intersecting with the part so this is a Base-plate support
                     hitLoc2 = []
@@ -960,18 +1036,24 @@ class BlockSupportGenerator(BaseSupportGenerator):
                         hitLoc2 = coords2.copy()
                         hitLoc2[:, 2] = 0.0
 
-                        logging.info('\tCreating Base-plate support')
+                        logging.info("\tCreating Base-plate support")
                     else:
-                        logging.warning('PROJECTIONS NOT MATCHING - skipping support generation')
+                        logging.warning(
+                            "PROJECTIONS NOT MATCHING - skipping support generation"
+                        )
                         continue
                 else:
                     coords3[index_ray2, 2] = hitLoc2[:, 2] - self.lowerProjectionOffset
 
                 # Create the upper and lower surface from the Ray intersection
-                surf2 = trimesh.Trimesh(vertices=coords2, faces=poly_tri[1], process= True)
+                surf2 = trimesh.Trimesh(
+                    vertices=coords2, faces=poly_tri[1], process=True
+                )
 
                 # Perform a simple 2D prismatic extrusion on the mesh
-                ab = trimesh.creation.extrude_triangulation(surf2.vertices[:, :2], surf2.faces, 100)
+                ab = trimesh.creation.extrude_triangulation(
+                    surf2.vertices[:, :2], surf2.faces, 100
+                )
 
                 # Identify the upper and lower surfaces based on the prismatic extrusion
                 lowerIdx = ab.vertices[:, 2] < 1
@@ -996,7 +1078,6 @@ class BlockSupportGenerator(BaseSupportGenerator):
                 implementation dealing with self-intersections
                 """
 
-
                 extrudedBlock.fix_normals()
                 extrudedBlock.merge_vertices()
 
@@ -1006,25 +1087,33 @@ class BlockSupportGenerator(BaseSupportGenerator):
                 else:
                     blockSupportMesh = boolDiff(extrudedBlock, cutMesh)
 
-                logging.info('\t\t Boolean Difference Time: {:.3f}\n'.format(time.time() - timeDiff))
+                logging.info(
+                    "\t\t Boolean Difference Time: {:.3f}\n".format(
+                        time.time() - timeDiff
+                    )
+                )
 
                 totalBooleanTime += time.time() - timeDiff
 
                 # Draw the support structures generated
-                blockSupportMesh.visual.face_colors[:,:3] = np.random.randint(254, size=3)
+                blockSupportMesh.visual.face_colors[:, :3] = np.random.randint(
+                    254, size=3
+                )
 
                 # Create a BlockSupport Object
-                baseSupportBlock = BlockSupportBase(supportObject=part,
-                                                    supportVolume=blockSupportMesh,
-                                                    supportSurface=subregion,
-                                                    intersectsPart=True)
+                baseSupportBlock = BlockSupportBase(
+                    supportObject=part,
+                    supportVolume=blockSupportMesh,
+                    supportSurface=subregion,
+                    intersectsPart=True,
+                )
 
                 baseSupportBlock._upperSurface = surf2
 
                 supportBlockRegions.append(baseSupportBlock)
 
-            logging.info('\t - processed support face\n')
+            logging.info("\t - processed support face\n")
 
-        logging.info('Total boolean time: {:.3f}\n'.format(totalBooleanTime))
+        logging.info("Total boolean time: {:.3f}\n".format(totalBooleanTime))
 
         return supportBlockRegions

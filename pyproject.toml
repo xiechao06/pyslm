@@ -1,0 +1,27 @@
+[project]
+name = "pyslm"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "doc8>=2.0.0",
+    "doepy>=0.0.1",
+    "manifold3d>=3.1.1",
+    "mapbox-earcut>=1.0.3",
+    "matplotlib>=3.10.3",
+    "networkx>=3.5",
+    "pyclipr",
+    "pyglet<2",
+    "pyqt5>=5.15.11",
+    "rstcheck>=6.2.5",
+    "rtree>=1.4.0",
+    "scikit-image>=0.25.2",
+    "shapely>=2.1.1",
+    "triangle>=20250106",
+    "trimesh>=4.7.0",
+    "vispy>=0.15.2",
+]
+
+[tool.uv.sources]
+pyclipr = { git = "https://github.com/drlukeparry/pyclipr" }

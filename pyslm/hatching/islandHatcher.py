@@ -4,7 +4,7 @@ import numpy as np
 
 import pyclipr
 
-from shapely.geometry import  MultiPolygon, Polygon
+from shapely.geometry import MultiPolygon, Polygon
 
 from ..geometry import Layer, ContourGeometry, HatchGeometry
 from .hatching import Hatcher, InnerHatchRegion
@@ -20,10 +20,14 @@ class Island(InnerHatchRegion):
     _boundary = None
     """ Private class attribute which is used to cache the boundary generated"""
 
-    def __init__(self, origin: np.ndarray = np.array([[0.0,0.0]]), orientation: Optional[float] = 0.0,
-                       islandWidth: Optional[float] = 0.0, islandOverlap: Optional[float] = 0.0,
-                       hatchDistance: Optional[float] = 0.1):
-
+    def __init__(
+        self,
+        origin: np.ndarray = np.array([[0.0, 0.0]]),
+        orientation: Optional[float] = 0.0,
+        islandWidth: Optional[float] = 0.0,
+        islandOverlap: Optional[float] = 0.0,
+        hatchDistance: Optional[float] = 0.1,
+    ):
         super().__init__()
 
         self.posId = 0
@@ -35,11 +39,11 @@ class Island(InnerHatchRegion):
         self._hatchDistance = hatchDistance
 
     def __str__(self):
-        return 'IslandRegion'
+        return "IslandRegion"
 
     @property
     def hatchDistance(self) -> float:
-        """ The distance between adjacent hatch vectors """
+        """The distance between adjacent hatch vectors"""
         return self._hatchDistance
 
     @hatchDistance.setter
@@ -48,7 +52,7 @@ class Island(InnerHatchRegion):
 
     @property
     def islandWidth(self) -> float:
-        """ The square island width """
+        """The square island width"""
         return self._islandWidth
 
     @islandWidth.setter
@@ -57,7 +61,7 @@ class Island(InnerHatchRegion):
 
     @property
     def islandOverlap(self) -> float:
-        """ The length of overlap between adjacent islands in both directions :math:`(x', y')`"""
+        """The length of overlap between adjacent islands in both directions :math:`(x', y')`"""
         return self._islandOverlap
 
     @islandOverlap.setter
@@ -77,17 +81,15 @@ class Island(InnerHatchRegion):
 
         if Island._boundary is None:
             sx = -self.islandOverlap
-            sy = - self.islandOverlap
+            sy = -self.islandOverlap
 
             ex = self._islandWidth + self.islandOverlap
             ey = self._islandWidth + self._islandOverlap
 
             # Generate a square island
-            Island._boundary = np.array([(sx, sy),
-                                         (sx, ey),
-                                         (ex, ey),
-                                         (ex, sy),
-                                         (sx, sy)])
+            Island._boundary = np.array(
+                [(sx, sy), (sx, ey), (ex, ey), (ex, sy), (sx, sy)]
+            )
 
         return Island._boundary
 
@@ -111,25 +113,27 @@ class Island(InnerHatchRegion):
         """
 
         startX = -self._islandOverlap
-        startY = - self._islandOverlap
+        startY = -self._islandOverlap
 
         endX = self._islandWidth + self._islandOverlap
         endY = self._islandWidth + self._islandOverlap
 
         if isOdd:
-            y = np.tile(np.arange(startY, endY, self._hatchDistance).reshape(-1, 1), 2).flatten()
+            y = np.tile(
+                np.arange(startY, endY, self._hatchDistance).reshape(-1, 1), 2
+            ).flatten()
             x = np.array([startX, endX])
             x = np.resize(x, y.shape)
         else:
-            x = np.tile(np.arange(startX, endX, self._hatchDistance).reshape(-1, 1), 2).flatten()
+            x = np.tile(
+                np.arange(startX, endX, self._hatchDistance).reshape(-1, 1), 2
+            ).flatten()
             y = np.array([startY, endY])
             y = np.resize(y, x.shape)
 
         z = np.arange(0, y.shape[0] / 2, 0.5).astype(np.int64)
 
-        return np.hstack([x.reshape(-1, 1),
-                          y.reshape(-1, 1),
-                          z.reshape(-1,1)])
+        return np.hstack([x.reshape(-1, 1), y.reshape(-1, 1), z.reshape(-1, 1)])
 
     def hatch(self) -> np.ndarray:
         """
@@ -153,7 +157,6 @@ class IslandHatcher(Hatcher):
     """
 
     def __init__(self):
-
         super().__init__()
 
         self._islandWidth = 5.0
@@ -161,11 +164,11 @@ class IslandHatcher(Hatcher):
         self._islandOffset = 0.5
 
     def __str__(self):
-        return 'IslandHatcher'
+        return "IslandHatcher"
 
     @property
     def islandWidth(self) -> float:
-        """ The island width """
+        """The island width"""
         return self._islandWidth
 
     @islandWidth.setter
@@ -174,7 +177,7 @@ class IslandHatcher(Hatcher):
 
     @property
     def islandOverlap(self) -> float:
-        """ The length of overlap between adjacent islands in both directions """
+        """The length of overlap between adjacent islands in both directions"""
         return self._islandOverlap
 
     @islandOverlap.setter
@@ -204,12 +207,15 @@ class IslandHatcher(Hatcher):
 
         pc2.addPaths(pathSubjects, pyclipr.Subject, True)
         pc2.addPaths(paths, pyclipr.Clip, True)
-        out = pc2.execute(pyclipr.Intersection, pyclipr.NonZero, returnOpenPaths=False, returnZ=False)
+        out = pc2.execute(
+            pyclipr.Intersection, pyclipr.NonZero, returnOpenPaths=False, returnZ=False
+        )
 
         return out
 
-
-    def generateIslands(self, paths, hatchAngle: Optional[float] = 90.0) -> List[Island]:
+    def generateIslands(
+        self, paths, hatchAngle: Optional[float] = 90.0
+    ) -> List[Island]:
         """
         Generates un-clipped islands which is guaranteed to cover the entire polygon region base on the maximum extent
         of the polygon bounding box. This method can be re-implement in a derived class to specify a different Island
@@ -239,15 +245,13 @@ class IslandHatcher(Hatcher):
 
         # Create the rotation matrix
         c, s = np.cos(theta_h), np.sin(theta_h)
-        R = np.array([(c, -s),
-                      (s, c)])
+        R = np.array([(c, -s), (s, c)])
 
         islands = []
         id = 0
 
         for i in np.arange(0, numIslands):
             for j in np.arange(0, numIslands):
-
                 # Apply the rotation matrix and translate to bounding box centre
                 startX = -bboxRadius + i * self._islandWidth
                 startY = -bboxRadius + j * self._islandWidth
@@ -258,9 +262,13 @@ class IslandHatcher(Hatcher):
                 pos = np.matmul(R, pos.T)
                 pos = pos.T + bboxCentre
 
-                island = Island(origin=pos, orientation=theta_h,
-                                islandWidth=self._islandWidth, islandOverlap=self._islandOverlap,
-                                hatchDistance=self._hatchDistance)
+                island = Island(
+                    origin=pos,
+                    orientation=theta_h,
+                    islandWidth=self._islandWidth,
+                    islandOverlap=self._islandOverlap,
+                    hatchDistance=self._hatchDistance,
+                )
 
                 island.posId = (i, j)
                 island.id = id
@@ -304,7 +312,6 @@ class IslandHatcher(Hatcher):
 
         # Repeat for inner contours
         for i in range(self._numInnerContours):
-
             offsetDelta -= self._contourOffset
             offsetBoundary = self.offsetBoundary(boundaryFeature, offsetDelta)
 
@@ -344,7 +351,9 @@ class IslandHatcher(Hatcher):
         self.intersectIslands(curBoundary, islands)
 
         # Sort the islands using a basic sort
-        sortedIslands = sorted(islands, key=lambda island: (island.posId[0], island.posId[1]) )
+        sortedIslands = sorted(
+            islands, key=lambda island: (island.posId[0], island.posId[1])
+        )
 
         # Structure for storing the hatch scan vectors
         clippedCoords = []
@@ -353,7 +362,6 @@ class IslandHatcher(Hatcher):
         # Generate the hatches for all the islands
         idx = 0
         for island in sortedIslands:
-
             # Generate the hatches for each island subregion
             coords = island.hatch()
 
@@ -371,7 +379,7 @@ class IslandHatcher(Hatcher):
             idx += coords.shape[0] / 2
 
         if len(unclippedCoords) < 1:
-            unclippedCoords = np.array([]).reshape(-1,2,3)
+            unclippedCoords = np.array([]).reshape(-1, 2, 3)
         else:
             unclippedCoords = np.vstack(unclippedCoords).reshape(-1, 2, 3)
 
@@ -382,7 +390,7 @@ class IslandHatcher(Hatcher):
             clippedPaths = self.clipLines(curBoundary, clippedCoords)
             clippedPaths = np.array(clippedPaths)
         else:
-            clippedPaths = np.array([]).reshape(-1,2,3)
+            clippedPaths = np.array([]).reshape(-1, 2, 3)
 
         # Merge hatches from both groups together
         hatches = np.vstack([clippedPaths, unclippedCoords])
@@ -390,7 +398,6 @@ class IslandHatcher(Hatcher):
 
         # Merge the lines together
         if len(clippedLines) > 0:
-
             # Extract only x-y coordinates and sort based on the pseudo-order stored in the z component.
             clippedLines = clippedLines[:, :, :3]
             id = np.argsort(clippedLines[:, 0, 2])
@@ -406,7 +413,7 @@ class IslandHatcher(Hatcher):
 
             # Only copy the (x,y) points from the coordinate array.
             hatchVectors = np.vstack(scanVectors)
-            hatchVectors  = hatchVectors[:, :, :2].reshape(-1, 2)
+            hatchVectors = hatchVectors[:, :, :2].reshape(-1, 2)
 
             # Note the does not require positional sorting
             if self.hatchSortMethod:
@@ -437,7 +444,6 @@ class IslandHatcher(Hatcher):
         overlapIslandsSet = set()
 
         for i in range(len(islands)):
-
             island = islands[i]
             s = island.boundary()
 
