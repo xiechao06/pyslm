@@ -124,32 +124,6 @@ uv sync
 uv pip install -e .
 ```
 
-If you are interested using the support generation module, there are additional dependencies that
-are required to be installed. These are not required for the core functionality of PySLM such as slicing and hatching.
-These require a working OpenGL environment to work via [vispy](https://vispy.org) - the PyQt5 module provides the
-OpenGL backend for this currently, which is currently supported across all major platforms.
-
-```bash
-pip install vispy pyqt5 triangle pyclipr manifold3d mapbox-earcut
-```
-
-Installation of PySLM can be performed using pre-built python packages using the PyPi repository. Additionally to
-interface with commercial L-PBF systems, the user can choose to install libSLM. Note, the user should contact the author
-to request machine build file translators, as this cannot be installed currently without having the machine build file
-translators available.
-
-```bash
-pip install PythonSLM
-```
-
-Alternatively, PySLM may be compiled directly from source. For PySLM version (>v0.6) the entire library are now written
-exclusively in Python, therefore a seperate compiler infrastructure (cython) is not required.
-
-```bash
-git clone https://github.com/xiechao06/pyslm.git && cd ./pyslm
-python setup.py install
-```
-
 ## Usage
 
 A basic example below, shows how relatively straightforward it is to generate a single layer from a STL mesh which
