@@ -194,7 +194,8 @@ xvfb-run -a <your script>
 ### A simple explanation
 
 Why xvfb-run -a fixes it:
-•  xvfb (X Virtual FrameBuffer) creates a virtual X11 display server in memory
-•  The -a flag automatically selects an available display number to avoid conflicts
-•  This provides Qt with the display connection it needs for OpenGL rendering, even though there's no physical monitor
-•  Qt can now successfully initialize the "xcb" platform plugin (X11 backend) and create OpenGL contexts for the rendering operations
+
+* xvfb (X Virtual FrameBuffer) creates a virtual X11 display server in memory
+* The -a flag automatically selects an available display number to avoid conflicts
+* This provides Qt with the display connection it needs for OpenGL rendering, even though there's no physical monitor
+* Qt can now successfully initialize the "xcb" platform plugin (X11 backend) and create OpenGL contexts for the rendering operations
