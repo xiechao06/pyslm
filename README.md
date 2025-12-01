@@ -171,3 +171,30 @@ The result of the script output is shown here
 
 For further guidance please look at documented examples are provided in
 [examples](https://github.com/xiechao06/pyslm/tree/master/examples).
+
+## Troubleshooting
+
+You may find pyslm could not load the Qt platform plugin "xcb" - Qt couldn't
+initialize because it couldn't connect to a display server, that is because
+pyslm uses Qt/OpenGL for rendering height maps but was running in a headless
+environment (no X11 display available).
+
+To fix this problem, you should use xvfb, install it by:
+
+```
+sudo apt-get update && sudo apt-get install -y libxcb-xinerama0 xvfb
+```
+
+Then run your script by:
+
+```
+xvfb-run -a <your script>
+```
+
+### A simple explanation
+
+Why xvfb-run -a fixes it:
+•  xvfb (X Virtual FrameBuffer) creates a virtual X11 display server in memory
+•  The -a flag automatically selects an available display number to avoid conflicts
+•  This provides Qt with the display connection it needs for OpenGL rendering, even though there's no physical monitor
+•  Qt can now successfully initialize the "xcb" platform plugin (X11 backend) and create OpenGL contexts for the rendering operations
