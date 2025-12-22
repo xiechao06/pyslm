@@ -115,6 +115,12 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         default=[0, 0, 0],
         help="Euler rotations in degrees as comma-separated values (default: 62,50,0).",
     )
+    parser.add_argument(
+        "--include-part",
+        action="store_true",
+        default=True,
+        help="Include the original part geometry in the exported GLB file.",
+    )
 
     return parser.parse_args(argv)
 
@@ -205,7 +211,10 @@ def main(argv: list[str]) -> int:
         return 0
 
     try:
-        export_supports(support_meshes, args.output_glb)
+        meshes = support_meshes
+        if args.include_part:
+            meshes = support_meshes + [part.geometry]
+        export_supports(meshes, args.output_glb)
     except Exception:
         logging.exception("Failed to write support GLB to %s", args.output_glb)
         return 1
